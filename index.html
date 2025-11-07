@@ -1,219 +1,318 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Trading Wheels Fantasy Stock Ball — Live Draft Board</title>
-  <style>
-    body {
-      font-family: "Inter", sans-serif;
-      background-color: #76787a;
-      background-image: url("Trading Wheels.png");
-      background-repeat: no-repeat;
-      background-position: center center;
-      background-size: 50%;
-      color: #cfd4e0;
-      margin: 0;
-      overflow-x: hidden;
-    }
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Trading Wheels Fantasy Stock Ball — Live Draft Board</title>
+<style>
+  :root{
+    --bg: rgba(10,12,16,0.55);
+    --panel: rgba(24,28,36,0.92);
+    --text: #eaf0ff;
+    --muted: #9fb0d0;
+    --accent: #50e3c2;
+    --taken:#ff6b6b;
+    --chip:#1e2533;
+    --chip-border:#2b3447;
+    --owner:#86b5ff;
+    --wm-opacity:.08;
+  }
 
-    header {
-      display: flex;
-      align-items: center;
-      padding: 8px 20px;
-      gap: 10px;
-      font-weight: bold;
-      color: #cfd4e0;
-    }
+  html,body{
+    margin:0;
+    background:transparent;
+    color:var(--text);
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
+  }
 
-    header img {
-      height: 36px;
-    }
+  .wrap{
+    position:relative;
+    padding:16px;
+    background:var(--bg);
+    border-radius:16px;
+    overflow:hidden;
+    backdrop-filter:blur(6px);
+    -webkit-backdrop-filter:blur(6px);
+  }
 
-    h1 {
-      font-size: 20px;
-    }
+  header{
+    position:relative;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:8px;
+    z-index:2;
+  }
 
-    .container {
-      display: flex;
-      gap: 20px;
-      padding: 10px 20px;
-    }
+  .logos{display:flex;align-items:center;gap:8px;}
+  img.logo{height:34px;object-fit:contain;display:none;}
+  img.logo.stock{height:26px;opacity:.9;}
+  header h1{margin:0;font-size:22px;font-weight:800;letter-spacing:.4px;}
 
-    .main-board {
-      flex: 3;
-    }
+  .legend{
+    display:flex;
+    gap:12px;
+    align-items:center;
+    margin:6px 0 12px;
+    color:var(--muted);
+    font-size:13px;
+    z-index:2;
+  }
 
-    .sidebar {
-      flex: 1;
-    }
+  .dot{width:10px;height:10px;border-radius:50%;}
+  .dot-open{background:var(--accent);}
+  .dot-taken{background:var(--taken);}
 
-    .card {
-      background: #1c2026;
-      border-radius: 10px;
-      padding: 12px 18px;
-      margin-bottom: 12px;
-    }
+  .layout{
+    display:grid;
+    grid-template-columns: 2.5fr 1fr;
+    gap:12px;
+    align-items:start;
+    z-index:2;
+  }
 
-    h2 {
-      color: #47e8c0;
-      font-size: 18px;
-      margin-bottom: 8px;
-    }
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+    gap:12px;
+  }
 
-    .category-section {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
+  .card{
+    background:var(--panel);
+    border:1px solid #2a3346;
+    border-radius:14px;
+    padding:12px;
+    min-height:64px;
+  }
 
-    .chip {
-      background: #232733;
-      border: 1px solid #2f333d;
-      border-radius: 12px;
-      padding: 12px 18px;
-      font-weight: 700;
-      color: #cfd4e0;
-      transition: all 0.2s ease;
-      text-align: center;
-      min-width: 85px;
-    }
+  .card h2{
+    margin:0 0 10px;
+    font-size:17px;
+    font-weight:800;
+    letter-spacing:.35px;
+    color:var(--accent);
+  }
 
-    .chip strong {
-      display: block;
-      font-size: 22px;
-    }
+  .chips{display:flex;flex-wrap:wrap;gap:8px;}
 
-    .chip small {
-      display: block;
-      font-size: 14px;
-      color: #9ba0ad;
-    }
+  /* simplified, larger chips */
+  .chip{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    padding:10px 14px;
+    background:var(--chip);
+    border:1px solid var(--chip-border);
+    border-radius:999px;
+    user-select:none;
+    transition:all .2s;
+    font-weight:800;
+    font-size:32px;
+    font-size:28px;
+    letter-spacing:.3px;
+  }
 
-    .chip.taken {
-      background: #2a1c1d;
-      color: #f3cdcd;
-    }
+  .chip.taken{
+    opacity:1;
+    border-color:#3b1f24;
+    background:#26171a;
+    color:#ffdede;
+  }
 
-    /* ===== QB Full-Screen Layout ===== */
-    body.qb-mode .category-section {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      grid-gap: 40px;
-      justify-items: center;
-      align-items: center;
-      padding: 60px;
-    }
+  .chip .owner{
+    font-weight:700;
+    color:var(--owner);
+    margin-left:6px;
+    opacity:.95;
+  }
 
-    body.qb-mode .chip {
-      transform: scale(1.8);
-      border-radius: 18px;
-      padding: 28px 35px;
-      background: #232733;
-    }
+  .owners{display:flex;flex-direction:column;gap:12px;}
+  .ownerCard h3{margin:0 0 8px;font-size:15px;color:#b8c8ff;}
+  .ownerList{display:flex;flex-wrap:wrap;gap:8px;}
 
-    body.qb-mode .chip strong {
-      font-size: 40px;
-    }
-
-    body.qb-mode .chip small {
-      font-size: 18px;
-      color: #a0a6b1;
-    }
-
-    body.qb-mode header {
-      justify-content: center;
-      padding-bottom: 0;
-    }
-
-    body.qb-mode .sidebar {
-      display: none;
-    }
-
-    body.qb-mode .main-board {
-      flex: 1;
-      text-align: center;
-    }
-
-    body.qb-mode h2 {
-      font-size: 28px;
-      text-align: center;
-    }
-
-  </style>
+  /* watermark */
+  .wm{
+    position:fixed;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    pointer-events:none;
+    z-index:0;
+  }
+  .wm img{
+    max-width:85vw;
+    max-height:85vh;
+    opacity:var(--wm-opacity);
+    object-fit:contain;
+    filter:grayscale(10%) brightness(115%);
+  }
+</style>
 </head>
 <body>
-  <header>
-    <img src="Trading Wheels.png" alt="Trading Wheels">
-    <h1>Trading Wheels Fantasy Stock Ball — Live Draft Board</h1>
-  </header>
-
-  <div class="container">
-    <div class="main-board" id="main-board"></div>
-    <div class="sidebar">
-      <div class="card">
-        <h2>Picks by Owner</h2>
-        <div id="owners"></div>
+  <div class="wrap" id="wrap">
+    <header>
+      <div class="logos">
+        <img id="twLogo" class="logo tw" alt="Trading Wheels"/>
+        <img id="stockLogo" class="logo stock" alt="Stock"/>
       </div>
-      <div class="card">
-        <h2>Defense (Defensive)</h2>
-        <div id="defense"></div>
+      <h1>Trading Wheels Fantasy Stock Ball — Live Draft Board</h1>
+    </header>
+
+    <div class="legend">
+      <div class="dot dot-open"></div><span>Available</span>
+      <div class="dot dot-taken"></div><span>Taken</span>
+    </div>
+
+    <div class="layout">
+      <!-- Left column: all stocks -->
+      <div>
+        <div class="grid" id="grid-top"></div>
+      </div>
+
+      <!-- Right column: picks + defense -->
+      <div>
+        <div class="card">
+          <h2>Picks by Owner</h2>
+          <div class="owners" id="owners"></div>
+        </div>
+        <div id="defense-footer" class="card" style="margin-top:12px;"></div>
       </div>
     </div>
   </div>
 
-  <script>
-    const params = new URLSearchParams(window.location.search);
-    const csvUrl = params.get("csv");
-    const twlogo = params.get("twlogo");
-    const stocklogo = params.get("stocklogo");
+  <!-- watermark -->
+  <div class="wm" id="wm"><img id="wmImg" alt="TW Watermark"/></div>
 
-    async function loadCSV(url) {
-      const res = await fetch(url);
-      const text = await res.text();
-      renderBoard(text);
+<script>
+const params=new URLSearchParams(location.search);
+const CSV_URL=params.get("csv")||"";
+const TW_LOGO=params.get("twlogo")||"Trading%20Wheels.png";
+const STOCKLOGO=params.get("stocklogo")||"stock_logo.png";
+const POLL_MS=5000;
+
+const twLogoEl=document.getElementById("twLogo");
+const stockLogoEl=document.getElementById("stockLogo");
+const wmEl=document.getElementById("wmImg");
+
+twLogoEl.src=TW_LOGO; twLogoEl.style.display="block";
+stockLogoEl.src=STOCKLOGO; stockLogoEl.style.display="block";
+wmEl.src=TW_LOGO;
+
+/* CSV parsing */
+function csvParseLine(line){
+  const out=[];let cur="";let inQuotes=false;
+  for(let i=0;i<line.length;i++){
+    const ch=line[i];
+    if(ch==='\"'){
+      if(inQuotes&&line[i+1]==='\"'){cur+='\"';i++;}
+      else inQuotes=!inQuotes;
+    }else if(ch===','&&!inQuotes){
+      out.push(cur);cur="";
+    }else cur+=ch;
+  }
+  out.push(cur);
+  return out;
+}
+
+function parseCSV(text){
+  if(text.charCodeAt(0)===0xFEFF){text=text.slice(1);}
+  const lines=text.replace(/\r\n/g,"\n").replace(/\r/g,"\n").split("\n").filter(l=>l.trim().length>0);
+  const rows=lines.map(csvParseLine);
+  const cats={};
+  const ownerMap={};
+
+  for(const cols of rows){
+    if(!cols||cols.length<4) continue;
+    const c0=(cols[0]||"").trim().toLowerCase();
+    if(c0==="title"||c0==="category_key") continue;
+    const k=(cols[0]||"").trim();
+    const n=(cols[1]||"").trim();
+    const sym=(cols[2]||"").trim();
+    const taken=(cols[4]||"").toString().trim().toLowerCase();
+    const owner=(cols[5]||"").trim();
+
+    if(!(k&&n&&sym)) continue;
+    if(!cats[k]) cats[k]={name:n,key:k,open:[],taken:[]};
+    const isTaken=(taken==="1"||taken==="true"||taken==="yes"||taken==="y");
+    const item={symbol:sym,owner};
+    (isTaken?cats[k].taken:cats[k].open).push(item);
+
+    if(isTaken&&owner){
+      ownerMap[owner]??=[];
+      ownerMap[owner].push({symbol:sym,cat:n});
     }
+  }
 
-    function renderBoard(csv) {
-      const lines = csv.trim().split("\n").slice(1);
-      const board = document.getElementById("main-board");
-      const section = document.createElement("div");
-      section.classList.add("card");
+  return {categories:Object.values(cats),ownerMap};
+}
 
-      const title = document.createElement("h2");
-      title.textContent = "QB (MAG7 + NFLX)";
-      section.appendChild(title);
+/* UI rendering */
+function makeChip(it,isTaken){
+  const d=document.createElement("div");
+  d.className="chip"+(isTaken?" taken":"");
+  const own=isTaken&&it.owner?` <span class='owner'>— ${it.owner}</span>`:"";
+  d.innerHTML=`<strong>${it.symbol}</strong>${own}`;
+  return d;
+}
 
-      const group = document.createElement("div");
-      group.classList.add("category-section");
+function renderBoard(cats){
+  const top=document.getElementById("grid-top");top.innerHTML="";
+  const def=document.getElementById("defense-footer");def.innerHTML="";
+  let defense=null;
+  const mainCats=[];
+  cats.forEach(c=>{
+    if((c.key||"").toLowerCase()==="def"||/defense/i.test(c.name)) defense=c;
+    else mainCats.push(c);
+  });
+  mainCats.forEach(c=>{
+    const card=document.createElement("div");card.className="card";
+    const h2=document.createElement("h2");h2.textContent=c.name;card.appendChild(h2);
+    const chips=document.createElement("div");chips.className="chips";
+    c.open.forEach(it=>chips.appendChild(makeChip(it,false)));
+    c.taken.forEach(it=>chips.appendChild(makeChip(it,true)));
+    card.appendChild(chips);top.appendChild(card);
+  });
+  if(defense){
+    const h2=document.createElement("h2");h2.textContent=defense.name;def.appendChild(h2);
+    const chips=document.createElement("div");chips.className="chips";
+    defense.open.forEach(it=>chips.appendChild(makeChip(it,false)));
+    defense.taken.forEach(it=>chips.appendChild(makeChip(it,true)));
+    def.appendChild(chips);
+  }
+}
 
-      for (let line of lines) {
-        const cols = line.split(",");
-        const category = cols[0]?.toLowerCase().trim();
-        const symbol = cols[1]?.trim();
-        const owner = cols[2]?.trim();
+function renderOwners(map){
+  const box=document.getElementById("owners");box.innerHTML="";
+  const names=Object.keys(map).sort();
+  if(!names.length){box.innerHTML=`<div style='color:var(--muted);font-size:13px'>No picks yet.</div>`;return;}
+  for(const n of names){
+    const oc=document.createElement("div");oc.className="ownerCard";
+    const h3=document.createElement("h3");h3.textContent=n;oc.appendChild(h3);
+    const list=document.createElement("div");list.className="ownerList";
+    map[n].forEach(it=>{
+      const chip=document.createElement("div");chip.className="chip taken";
+      chip.innerHTML=`<strong>${it.symbol}</strong>`;
+      list.appendChild(chip);
+    });
+    oc.appendChild(list);box.appendChild(oc);
+  }
+}
 
-        if (category === "qb" && symbol) {
-          const chip = document.createElement("div");
-          chip.classList.add("chip");
-          if (owner) chip.classList.add("taken");
-          chip.innerHTML = `<strong>${symbol}</strong>${owner ? `<small>— ${owner}</small>` : ""}`;
-          group.appendChild(chip);
-        }
-      }
-
-      section.appendChild(group);
-      board.appendChild(section);
-    }
-
-    if (csvUrl) {
-      loadCSV(csvUrl);
-    }
-
-    // Activate QB full-screen mode when loaded via qb.html
-    if (window.location.href.toLowerCase().includes("qb.html")) {
-      document.body.classList.add("qb-mode");
-    }
-  </script>
+/* polling */
+async function sync(){
+  try{
+    if(!CSV_URL) return;
+    const res=await fetch(CSV_URL+(CSV_URL.includes("?")?"&":"?")+"cachebust="+Date.now());
+    const text=await res.text();
+    const {categories,ownerMap}=parseCSV(text);
+    renderBoard(categories);
+    renderOwners(ownerMap);
+  }catch(e){console.error(e);}
+}
+sync();
+setInterval(sync,POLL_MS);
+</script>
 </body>
 </html>
