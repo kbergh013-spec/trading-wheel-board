@@ -15,7 +15,9 @@
     --chip:#1e2533;
     --chip-border:#2b3447;
     --owner:#86b5ff;
-    --wm-opacity:.08;
+
+    /* default background (same “feel” as your QB page) */
+    --wm-opacity: .12; /* you can override via &wm= in the URL */
   }
 
   html,body{
@@ -33,6 +35,7 @@
     overflow:hidden;
     backdrop-filter:blur(6px);
     -webkit-backdrop-filter:blur(6px);
+    z-index:1; /* sits above the watermark */
   }
 
   header{
@@ -95,7 +98,7 @@
 
   .chips{display:flex;flex-wrap:wrap;gap:8px;}
 
-  /* simplified, larger chips */
+  /* big rounded “bubble” chips */
   .chip{
     display:inline-flex;
     align-items:center;
@@ -108,8 +111,7 @@
     user-select:none;
     transition:all .2s;
     font-weight:800;
-    font-size:32px;
-    font-size:28px;
+    font-size:28px; /* you can tweak */
     letter-spacing:.3px;
   }
 
@@ -131,7 +133,7 @@
   .ownerCard h3{margin:0 0 8px;font-size:15px;color:#b8c8ff;}
   .ownerList{display:flex;flex-wrap:wrap;gap:8px;}
 
-  /* watermark */
+  /* full-screen background (same behavior as QB page) */
   .wm{
     position:fixed;
     inset:0;
@@ -139,7 +141,7 @@
     align-items:center;
     justify-content:center;
     pointer-events:none;
-    z-index:0;
+    z-index:0; /* sits behind everything */
   }
   .wm img{
     max-width:85vw;
@@ -153,7 +155,7 @@
 <body>
   <div class="wrap" id="wrap">
     <header>
-          <div class="logos">
+      <div class="logos">
         <img id="twLogo" class="logo tw" alt="Trading Wheels"/>
         <img id="stockLogo" class="logo stock" alt="Stock"/>
       </div>
@@ -166,12 +168,12 @@
     </div>
 
     <div class="layout">
-      <!-- Left column: all stocks -->
+      <!-- LEFT: categories -->
       <div>
         <div class="grid" id="grid-top"></div>
       </div>
 
-      <!-- Right column: picks + defense -->
+      <!-- RIGHT: picks + defense -->
       <div>
         <div class="card">
           <h2>Picks by Owner</h2>
@@ -182,137 +184,167 @@
     </div>
   </div>
 
-  <!-- watermark -->
-  <div class="wm" id="wm"><img id="wmImg" alt="TW Watermark"/></div>
+  <!-- background watermark -->
+  <div class="wm" id="wm"><img id="wmImg" alt="Background"/></div>
 
 <script>
-const params=new URLSearchParams(location.search);
-const CSV_URL=params.get("csv")||"";
-const TW_LOGO=params.get("twlogo")||"Trading%20Wheels.png";
-const STOCKLOGO=params.get("stocklogo")||"stock_logo.png";
-const POLL_MS=5000;
+/* ---------- Params ---------- */
+const params    = new URLSearchParams(location.search);
+const CSV_URL   = params.get("csv") || "";
+const TW_LOGO   = params.get("twlogo")   || "Trading%20Wheels.png";
+const STOCKLOGO = params.get("stocklogo")|| "stock_logo.png";
+/* NEW: background & opacity—defaults match your QB page */
+const BG_IMAGE  = params.get("bg") || "Fantasy_Stock_Ball_background.png";
+const WM_OPAC   = params.get("wm"); // e.g. 0.12
 
-const twLogoEl=document.getElementById("twLogo");
-const stockLogoEl=document.getElementById("stockLogo");
-const wmEl=document.getElementById("wmImg");
+const POLL_MS   = 5000;
 
-twLogoEl.src=TW_LOGO; twLogoEl.style.display="block";
-stockLogoEl.src=STOCKLOGO; stockLogoEl.style.display="block";
-wmEl.src=TW_LOGO;
+/* ---------- Elements ---------- */
+const twLogoEl    = document.getElementById("twLogo");
+const stockLogoEl = document.getElementById("stockLogo");
+const wmImgEl     = document.getElementById("wmImg");
 
-/* CSV parsing */
+/* show logos + set background image */
+twLogoEl.src = TW_LOGO;            twLogoEl.style.display = "block";
+stockLogoEl.src = STOCKLOGO;       stockLogoEl.style.display = "block";
+wmImgEl.src = BG_IMAGE;
+
+/* apply optional opacity override from URL */
+if (WM_OPAC && !Number.isNaN(parseFloat(WM_OPAC))) {
+  document.documentElement.style.setProperty("--wm-opacity", parseFloat(WM_OPAC));
+}
+
+/* ---------- CSV helpers ---------- */
 function csvParseLine(line){
-  const out=[];let cur="";let inQuotes=false;
+  const out=[]; let cur=""; let inQuotes=false;
   for(let i=0;i<line.length;i++){
     const ch=line[i];
     if(ch==='\"'){
-      if(inQuotes&&line[i+1]==='\"'){cur+='\"';i++;}
-      else inQuotes=!inQuotes;
-    }else if(ch===','&&!inQuotes){
-      out.push(cur);cur="";
-    }else cur+=ch;
+      if(inQuotes && line[i+1]==='\"'){ cur+='\"'; i++; }
+      else inQuotes = !inQuotes;
+    }else if(ch===',' && !inQuotes){
+      out.push(cur); cur="";
+    }else{
+      cur+=ch;
+    }
   }
   out.push(cur);
   return out;
 }
 
+/* Robust parser: skips “Title, …” and header row “category_key, …” */
 function parseCSV(text){
-  if(text.charCodeAt(0)===0xFEFF){text=text.slice(1);}
-  const lines=text.replace(/\r\n/g,"\n").replace(/\r/g,"\n").split("\n").filter(l=>l.trim().length>0);
-  const rows=lines.map(csvParseLine);
-  const cats={};
-  const ownerMap={};
+  if(text.charCodeAt(0)===0xFEFF){ text=text.slice(1); }
+  const lines = text.replace(/\r\n/g,"\n").replace(/\r/g,"\n")
+                    .split("\n").filter(l=>l.trim().length>0);
+  const rows  = lines.map(csvParseLine);
+
+  const cats = {};
+  const ownerMap = {};
 
   for(const cols of rows){
-    if(!cols||cols.length<4) continue;
-    const c0=(cols[0]||"").trim().toLowerCase();
-    if(c0==="title"||c0==="category_key") continue;
-    const k=(cols[0]||"").trim();
-    const n=(cols[1]||"").trim();
-    const sym=(cols[2]||"").trim();
-    const taken=(cols[4]||"").toString().trim().toLowerCase();
-    const owner=(cols[5]||"").trim();
+    if(!cols || cols.length < 4) continue;
 
-    if(!(k&&n&&sym)) continue;
-    if(!cats[k]) cats[k]={name:n,key:k,open:[],taken:[]};
-    const isTaken=(taken==="1"||taken==="true"||taken==="yes"||taken==="y");
-    const item={symbol:sym,owner};
-    (isTaken?cats[k].taken:cats[k].open).push(item);
+    const c0 = (cols[0]||"").trim().toLowerCase();
+    if(c0 === "title" || c0 === "category_key") continue;
 
-    if(isTaken&&owner){
-      ownerMap[owner]??=[];
-      ownerMap[owner].push({symbol:sym,cat:n});
+    const k     = (cols[0]||"").trim();   // category_key
+    const n     = (cols[1]||"").trim();   // category_name
+    const sym   = (cols[2]||"").trim();   // symbol
+    const taken = (cols[4]||"").toString().trim().toLowerCase(); // taken
+    const owner = (cols[5]||"").trim();   // owner
+
+    if(!(k && n && sym)) continue;
+
+    if(!cats[k]) cats[k] = {name:n, key:k, open:[], taken:[]};
+    const isTaken = (taken==="1"||taken==="true"||taken==="yes"||taken==="y");
+    const item = {symbol:sym, owner};
+    (isTaken ? cats[k].taken : cats[k].open).push(item);
+
+    if(isTaken && owner){
+      ownerMap[owner] ??= [];
+      ownerMap[owner].push({symbol:sym, cat:n});
     }
   }
 
-  return {categories:Object.values(cats),ownerMap};
+  return {categories:Object.values(cats), ownerMap};
 }
 
-/* UI rendering */
-function makeChip(it,isTaken){
-  const d=document.createElement("div");
-  d.className="chip"+(isTaken?" taken":"");
-  const own=isTaken&&it.owner?` <span class='owner'>— ${it.owner}</span>`:"";
-  d.innerHTML=`<strong>${it.symbol}</strong>${own}`;
+/* ---------- Rendering ---------- */
+function makeChip(it, isTaken){
+  const d = document.createElement("div");
+  d.className = "chip" + (isTaken ? " taken" : "");
+  const own = isTaken && it.owner ? ` <span class="owner">— ${it.owner}</span>` : "";
+  d.innerHTML = `<strong>${it.symbol}</strong>${own}`;
   return d;
 }
 
-function renderBoard(cats){
-  const top=document.getElementById("grid-top");top.innerHTML="";
-  const def=document.getElementById("defense-footer");def.innerHTML="";
-  let defense=null;
-  const mainCats=[];
-  cats.forEach(c=>{
-    if((c.key||"").toLowerCase()==="def"||/defense/i.test(c.name)) defense=c;
-    else mainCats.push(c);
-  });
-  mainCats.forEach(c=>{
-    const card=document.createElement("div");card.className="card";
-    const h2=document.createElement("h2");h2.textContent=c.name;card.appendChild(h2);
-    const chips=document.createElement("div");chips.className="chips";
-    c.open.forEach(it=>chips.appendChild(makeChip(it,false)));
-    c.taken.forEach(it=>chips.appendChild(makeChip(it,true)));
-    card.appendChild(chips);top.appendChild(card);
-  });
+function renderBoard(categories){
+  const top = document.getElementById('grid-top');      top.innerHTML = "";
+  const def = document.getElementById('defense-footer');def.innerHTML = "";
+
+  let defense = null;
+  const main = [];
+
+  for(const c of categories){
+    if ((c.key||"").toLowerCase()==="def" || /defense/i.test(c.name||"")) defense = c;
+    else main.push(c);
+  }
+
+  // main categories
+  for(const cat of main){
+    const card = document.createElement('div'); card.className = "card";
+    const h2   = document.createElement('h2');  h2.textContent = cat.name; card.appendChild(h2);
+    const chips= document.createElement('div'); chips.className = "chips";
+    cat.open.forEach(it => chips.appendChild(makeChip(it,false)));
+    cat.taken.forEach(it => chips.appendChild(makeChip(it,true)));
+    card.appendChild(chips); top.appendChild(card);
+  }
+
+  // defense on the right panel
   if(defense){
-    const h2=document.createElement("h2");h2.textContent=defense.name;def.appendChild(h2);
-    const chips=document.createElement("div");chips.className="chips";
-    defense.open.forEach(it=>chips.appendChild(makeChip(it,false)));
-    defense.taken.forEach(it=>chips.appendChild(makeChip(it,true)));
+    const h2 = document.createElement('h2'); h2.textContent = defense.name; def.appendChild(h2);
+    const chips = document.createElement('div'); chips.className = "chips";
+    defense.open.forEach(it => chips.appendChild(makeChip(it,false)));
+    defense.taken.forEach(it => chips.appendChild(makeChip(it,true)));
     def.appendChild(chips);
   }
 }
 
-function renderOwners(map){
-  const box=document.getElementById("owners");box.innerHTML="";
-  const names=Object.keys(map).sort();
-  if(!names.length){box.innerHTML=`<div style='color:var(--muted);font-size:13px'>No picks yet.</div>`;return;}
-  for(const n of names){
-    const oc=document.createElement("div");oc.className="ownerCard";
-    const h3=document.createElement("h3");h3.textContent=n;oc.appendChild(h3);
-    const list=document.createElement("div");list.className="ownerList";
-    map[n].forEach(it=>{
-      const chip=document.createElement("div");chip.className="chip taken";
-      chip.innerHTML=`<strong>${it.symbol}</strong>`;
+function renderOwners(ownerMap){
+  const container = document.getElementById('owners'); container.innerHTML = "";
+  const owners = Object.keys(ownerMap).sort();
+  if(owners.length===0){
+    container.innerHTML = `<div style="color:var(--muted);font-size:13px">No picks yet.</div>`;
+    return;
+  }
+  for(const name of owners){
+    const oc = document.createElement('div'); oc.className = "ownerCard";
+    const h3 = document.createElement('h3'); h3.textContent = name; oc.appendChild(h3);
+    const list = document.createElement('div'); list.className = "ownerList";
+    ownerMap[name].forEach(it=>{
+      const chip = document.createElement('div'); chip.className = "chip taken";
+      chip.innerHTML = `<strong>${it.symbol}</strong>`;
       list.appendChild(chip);
     });
-    oc.appendChild(list);box.appendChild(oc);
+    oc.appendChild(list); container.appendChild(oc);
   }
 }
 
-/* polling */
+/* ---------- Poll loop ---------- */
 async function sync(){
   try{
     if(!CSV_URL) return;
-    const res=await fetch(CSV_URL+(CSV_URL.includes("?")?"&":"?")+"cachebust="+Date.now());
-    const text=await res.text();
-    const {categories,ownerMap}=parseCSV(text);
+    const res = await fetch(CSV_URL + (CSV_URL.includes("?") ? "&" : "?") + "cachebust=" + Date.now());
+    const text = await res.text();
+    const {categories, ownerMap} = parseCSV(text);
     renderBoard(categories);
     renderOwners(ownerMap);
-  }catch(e){console.error(e);}
+  }catch(e){
+    console.error(e);
+  }
 }
-sync();
-setInterval(sync,POLL_MS);
+sync(); setInterval(sync, POLL_MS);
 </script>
 </body>
 </html>
