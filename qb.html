@@ -1,11 +1,8 @@
 <!doctype html><html><head><meta charset="utf-8"><title>QB Stocks</title>
 <script>
-const q = new URLSearchParams({
-  csv: "https://docs.google.com/spreadsheets/d/10eCZI1tLui-KwHQDRFRnsZXghM_jf5MX8zdlCZkI-Os/gviz/tq?tqx=out:csv",
-  twlogo: "Trading Wheels.png",
-  stocklogo: "stock_logo.png",
-  compact: "1",
-  view: "qb"
-});
-location.replace("index.html?" + q.toString());
+location.replace(
+  "index.html?csv=" +
+  encodeURIComponent("https://r.jina.ai/http://docs.google.com/spreadsheets/d/10eCZI1tLui-KwHQDRFRnsZXghM_jf5MX8zdlCZkI-Os/gviz/tq?tq=select%20A,B,C,D,E,F,G,H%20where%20A%3D'qb'&tqx=out:csv") +
+  "&twlogo=Trading%20Wheels.png&stocklogo=stock_logo.png"
+);
 </script></head><body></body></html>
