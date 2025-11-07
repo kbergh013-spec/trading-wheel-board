@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Stage — Bubbles</title>
+<style>
+  :root{
+    --bg:#76787a;
+    --panel:#1c2026;
+    --chip:#232733;
+    --chip-border:#2f333d;
+    --text:#cfd4e0;
+    --muted:#9ba0ad;
+    --accent:#47e8c0;
+  }
+  html,body{height:100%;margin:0;background:var(--bg);color:var(--text);
+            font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  /* Watermark background (same vibe as your board) */
+  body{
+    background-image:url("Trading Wheels.png");
+    background-repeat:no-repeat;
+    background-position:center center;
+    background-size:55%;
+    background-attachment:fixed;
+    background-blend-mode:multiply;
+  }
+  header{display:flex;align-items:center;gap:10px;padding:10px 20px}
+  header img{height:36px}
+  header h1{font-size:20px;margin:0}
+  .wrap{min-height:100%;display:flex;flex-direction:column;gap:12px;padding:12px}
+  .panel{background:var(--panel);border-radius:14px;padding:14px 18px;max-width:1800px;margin:0 auto;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+  .title{color:var(--accent);font-weight:900;font-size:22px;margin:0 0 10px 0;text-align:center}
+
+  /* Invisible layout grid, chips remain bubbles */
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(var(--cols,4),1fr);
+    grid-template-rows:repeat(var(--rows,2),1fr);
+    gap:var(--gap,40px);
+    justify-items:center;
+    align-items:center;
+    min-height:70vh;
+    padding:20px;
+  }
+
+  /* Bubble chip (matches your board look) */
+  .chip{
+    background:var(--chip);
+    border:1px solid var(--chip-border);
+    border-radius:999px;             /* <- pill/bubble look */
+    padding:28px 36px;
+    min-width:180px;
+    display:flex;align-items:center;justify-content:center;
+    text-align:center;
+    color:var(--text);
+    box-shadow:0 6px 18px rgba(0,0,0,.25);
+    user-select:none;
+  }
+  /* Big ticker */
+  .sym{font-weight:900;letter-spacing:.6px;line-height:1}
+  .size-s{font-size:32px}
+  .size-m{font-size:42px}
+  .size-l{font-size:56px}
+  .size-xl{font-size:72px}
+
+  /* Optional “taken” style if you keep owner in this view later */
+  .taken{background:#2a1c1d;color:#f3cdcd;border-color:#3b1f24}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <img src="Trading Wheels.png" alt="TW">
+      <h1>Trading Wheels — Stage (Bubbles)</h1>
+    </header>
+
+    <div class="panel">
+      <h2 id="title" class="title"></h2>
+      <div id="grid" class="grid"></div>
+    </div>
+  </div>
+
+<script>
+(async function(){
+  const qs   = new URLSearchParams(location.search);
+  const csv  = qs.get("csv");                           // required (filtered CSV)
+  const rows = parseInt(qs.get("rows")||"2",10);        // default 2
+  const cols = parseInt(qs.get("cols")||"4",10);        // default 4
+  const size = (qs.get("size")||"xl").toLowerCase();    // s|m|l|xl (default xl)
+  const gap  = qs.get("gap")||"40";                     // px between bubbles
+  const title= qs.get("title")||"";
+
+  document.getElementById("title").textContent = title;
+  const grid = document.getElementById("grid");
+  grid.style.setProperty("--rows", rows);
+  grid.style.setProperty("--cols", cols);
+  grid.style.setProperty("--gap",  `${parseInt(gap,10)}px`);
+
+  if(!csv){ grid.innerHTML = "<div style='color:#ffdddd'>Missing ?csv=…</div>"; return; }
+
+  try{
+    const res = await fetch(csv + (csv.includes("?")?"&":"?") + "cache="+Date.now());
+    const text = await res.text();
+
+    // Basic CSV parse tolerant to quotes/commas
+    const lines = text.replace(/\r\n/g,"\n").split("\n").filter(Boolean);
+    let start = 0, header = lines[0].split(",");
+    // Skip potential gviz "Title" row
+    if(/^"?title"?$/i.test(header[0]?.trim())){ start=2; header = lines[1].split(","); }
+    const h = header.map(x=>x.trim().toLowerCase());
+
+    // Find symbol column (prefer "symbol", fallback to "c" if someone exported bare ABC headers)
+    let symIdx = h.indexOf("symbol");
+    if(symIdx < 0) symIdx = h.indexOf("c");
+
+    const items = [];
+    for(let i=start+1;i<lines.length;i++){
+      const row = splitCSV(lines[i]);
+      if(!row.length) continue;
+      const sym = (row[symIdx]||"").trim();
+      if(!sym) continue;
+      items.push({sym});
+    }
+
+    // Render bubbles
+    const sizeClass = ["s","m","l","xl"].includes(size) ? `size-${size}` : "size-xl";
+    grid.innerHTML = "";
+    items.slice(0, rows*cols).forEach(it=>{
+      const d = document.createElement("div");
+      d.className = "chip";
+      d.innerHTML = `<div class="sym ${sizeClass}">${escapeHTML(it.sym)}</div>`;
+      grid.appendChild(d);
+    });
+
+  }catch(e){
+    grid.innerHTML = "<div style='color:#ffdddd'>Failed to load CSV.</div>";
+  }
+
+  function splitCSV(line){
+    const out=[]; let cur=""; let q=false;
+    for(let i=0;i<line.length;i++){
+      const ch=line[i];
+      if(ch === '"'){
+        if(q && line[i+1] === '"'){ cur+='"'; i++; } else q=!q;
+      }else if(ch === ',' && !q){
+        out.push(cur); cur="";
+      }else cur+=ch;
+    }
+    out.push(cur); return out;
+  }
+  function escapeHTML(s){return s.replace(/[&<>"]/g,c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+})();
+</script>
+</body>
+</html>
