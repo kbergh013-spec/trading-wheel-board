@@ -85,18 +85,32 @@
     height:auto; opacity:0.12; filter:grayscale(10%) brightness(1.05);
   }
 
-  /* Compact mode: ~10–12% smaller, tighter spacing */
-  body.compact header h1{font-size:19px}
-  body.compact .wrap{padding:12px}
-  body.compact .card{padding:9px}
-  body.compact .card h2{font-size:14px;margin-bottom:8px}
-  body.compact .chips{gap:6px}
-  body.compact .chip{padding:6px 8px}
-  body.compact img.logo{height:30px}
-  body.compact img.logo.stock{height:22px}
-  body.compact .legend{font-size:12px; gap:10px}
-  body.compact .grid{grid-template-columns: repeat(4, minmax(220px, 1fr)); gap:10px}
-  body.compact .layout{grid-template-columns: 3.1fr 0.9fr}
+ /* Compact mode: smaller chips + tighter layout */
+body.compact header h1{font-size:18px}
+body.compact .wrap{padding:10px}
+body.compact .card{padding:8px}
+body.compact .card h2{font-size:14px;margin-bottom:6px}
+body.compact .chips{gap:5px}
+body.compact .chip{
+  padding:4px 6px;
+  font-size:12px;
+  font-weight:700;
+  border-radius:999px;
+}
+body.compact .chip small{font-size:10px}
+body.compact .price{font-size:11px}
+body.compact .chg{font-size:10px}
+body.compact .logos img.logo{height:28px}
+body.compact .logos img.logo.stock{height:22px}
+body.compact .legend{font-size:11px; gap:8px}
+body.compact .grid{
+  grid-template-columns: repeat(4, minmax(210px, 1fr));
+  gap:10px;
+}
+body.compact .layout{
+  grid-template-columns: 3.05fr 0.95fr;
+}
+
 </style>
 </head>
 <body>
