@@ -16,18 +16,26 @@
     --chip-border:#2b3447;
     --owner:#86b5ff;
   }
+
   html,body{
     margin:0; padding:0; background:transparent;
     font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Helvetica,Arial;
     color:var(--text);
   }
-  .wrap{position:relative; padding:16px; background:var(--bg); border-radius:16px; overflow:hidden;
-        backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);}
 
-  /* Header + logos */
+  /* container */
+  .wrap{
+    position:relative;
+    padding:16px;
+    background:var(--bg);
+    border-radius:16px;
+    backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+  }
+
+  /* Header with two logos */
   header{position:relative; display:flex; align-items:center; gap:12px; margin-bottom:10px; z-index:2;}
   .logos{display:flex; align-items:center; gap:8px}
-  img.logo{height:34px; width:auto; object-fit:contain}
+  img.logo{height:34px; width:auto; object-fit:contain; display:none}
   img.logo.stock{height:26px; opacity:.9}
   header h1{font-size:22px;margin:0;letter-spacing:.4px; font-weight:800}
 
@@ -35,10 +43,17 @@
   .dot{width:10px;height:10px;border-radius:50%}
   .dot-open{background:var(--accent)} .dot-taken{background:var(--taken)}
 
-  /* Layout: left = board, right = owners */
-  .layout{position:relative; display:grid; grid-template-columns: 2.5fr 1fr; gap:12px; align-items:start; z-index:2}
+  /* Two columns: left = board, right = owners + defense */
+  .layout{
+    position:relative;
+    display:grid;
+    grid-template-columns: 2.5fr 1fr;
+    gap:12px;
+    align-items:start;
+    z-index:2;
+  }
 
-  /* Category grid */
+  /* Left: categories grid */
   .grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:12px}
 
   /* Cards & chips */
@@ -51,29 +66,30 @@
   .chip.taken{opacity:1; border-color:#3b1f24; background:#26171a; color:#ffdede}
   .chip .owner{font-weight:700; color:var(--owner); margin-left:6px; opacity:.95}
 
-  /* Owners panel */
+  /* Right column stack: Picks (auto) + Defense (fills & scrolls) */
+  .rightCol{display:flex; flex-direction:column; gap:12px; min-height:40vh}
   .owners{display:flex; flex-direction:column; gap:12px}
   .ownerCard h3{margin:0 0 10px; font-size:15px; color:#b8c8ff}
   .ownerList{display:flex; flex-wrap:wrap; gap:8px}
 
-  /* Defense footer (full width under left grid) */
-  .defense-footer{margin-top:12px}
+  .defCard{flex:1; min-height:220px; overflow:auto;} /* fills remaining height and scrolls internally */
 
-  /* Screen-wide watermark (TW logo) */
-  #sideMark{
-    position:fixed; top:50%; left:50%; transform:translate(-50%, -50%);
-    width:100vw; height:auto; max-width:100vw; max-height:100vh;
-    object-fit:contain; opacity:.05; filter:grayscale(10%) brightness(115%);
-    z-index:0; pointer-events:none; user-select:none;
-  }
-
-  /* Ensure content sits above watermark */
-  .main, .categoryCol, .rightCol, header { position:relative; z-index:2; }
-
-  /* Timestamp */
-  #timestamp{
-    position:fixed; right:16px; bottom:8px;
-    font-size:13px; color:#8fa3c8; opacity:.65; z-index:9999;
+  /* Full-screen watermark that fits inside the viewport (no clipping) */
+  .sideMark{
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100vw;
+    height: auto;
+    max-width: 100vw;
+    max-height: 100vh;
+    object-fit: contain;
+    opacity: 0.05; /* tweak strength here */
+    filter: grayscale(10%) brightness(115%);
+    z-index: 0;  /* behind content */
+    pointer-events: none;
+    user-select: none;
   }
 </style>
 </head>
@@ -93,53 +109,53 @@
     </div>
 
     <div class="layout">
-      <!-- LEFT: main board -->
+      <!-- LEFT: four main categories -->
       <div>
         <div class="grid" id="grid-top"></div>
-        <div id="defense-footer"></div>
       </div>
 
-      <!-- RIGHT: picks by owner -->
+      <!-- RIGHT: picks by owner + DEFENSE -->
       <div class="rightCol">
         <div class="card">
           <h2>Picks by Owner</h2>
           <div class="owners" id="owners"></div>
         </div>
+
+        <div class="card defCard" id="def-card" style="display:none">
+          <h2 id="def-title">Defense (Defensive)</h2>
+          <div class="chips" id="def-chips"></div>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Watermark -->
-  <img id="sideMark" alt="Trading Wheels Watermark"/>
-
-  <!-- Timestamp -->
-  <div id="timestamp">Last updated: —</div>
+  <!-- Watermark image -->
+  <img id="sideMark" class="sideMark" alt="Trading Wheels Watermark"/>
 
 <script>
-/* ---------- Params & asset defaults ---------- */
-const params    = new URLSearchParams(location.search);
-const CSV_URL   = params.get("csv"); // REQUIRED
-// If not supplied via ?twlogo=... or ?stocklogo=..., fall back to files in repo root:
-const TW_LOGO   = params.get("twlogo")   || "Trading Wheels.png";   // matches your repo filename
-const STOCKLOGO = params.get("stocklogo")|| "stock_logo.png";
+const params   = new URLSearchParams(location.search);
+const CSV_URL  = params.get("csv");
+const TW_LOGO  = params.get("twlogo")   || "file:///C:/Users/kberg/OneDrive/Pictures/Trading%20Wheels.png";
+const STOCKLOGO= params.get("stocklogo"); // optional
+const POLL_MS  = 5000;
 
-const POLL_MS   = 5000;
-
-/* ---------- DOM refs ---------- */
+// Header logos & watermark
 const twLogoEl    = document.getElementById('twLogo');
 const stockLogoEl = document.getElementById('stockLogo');
 const sideMarkEl  = document.getElementById('sideMark');
-const tsEl        = document.getElementById('timestamp');
 
 if (TW_LOGO){
   twLogoEl.src = TW_LOGO;
-  sideMarkEl.src = TW_LOGO; // use same file for watermark
+  twLogoEl.style.display='block';
+  sideMarkEl.src = TW_LOGO;
+  sideMarkEl.style.display='block';
 }
 if (STOCKLOGO){
   stockLogoEl.src = STOCKLOGO;
+  stockLogoEl.style.display='block';
 }
 
-/* ---------- CSV parsing helpers ---------- */
+/* ---------- CSV helpers ---------- */
 function csvParseLine(line){
   const out=[]; let cur=""; let inQuotes=false;
   for(let i=0;i<line.length;i++){
@@ -157,11 +173,10 @@ function csvParseLine(line){
   return out;
 }
 
-// Robust parser: skips Google gviz "Title" row and header row
+/* Robust parser: skips “Title” and header row */
 function parseCSV(text){
   if(text.charCodeAt(0)===0xFEFF){ text=text.slice(1); }
-  const lines = text.replace(/\r\n/g,"\n").replace(/\r/g,"\n")
-                    .split("\n").filter(l=>l.trim().length>0);
+  const lines = text.replace(/\r\n/g,"\n").replace(/\r/g,"\n").split("\n").filter(l=>l.trim().length>0);
   const rows  = lines.map(csvParseLine);
 
   const cats = {};
@@ -172,14 +187,14 @@ function parseCSV(text){
     if(!cols || cols.length===0) continue;
 
     const c0 = (cols[0]||"").trim().toLowerCase();
-    if(c0 === "title" || c0 === "category_key") continue;  // skip title/header
+    if(c0 === "title" || c0 === "category_key") continue;
 
-    const k   = (cols[0]||"").trim();      // category_key
-    const n   = (cols[1]||"").trim();      // category_name
-    const sym = (cols[2]||"").trim();      // symbol
-    const lab = (cols[3]||"").trim();      // label
-    const taken = (cols[4]||"").toString().trim().toLowerCase(); // taken
-    const owner = (cols[5]||"").trim();    // owner
+    const k   = (cols[0]||"").trim();
+    const n   = (cols[1]||"").trim();
+    const sym = (cols[2]||"").trim();
+    const lab = (cols[3]||"").trim();
+    const taken = (cols[4]||"").toString().trim().toLowerCase();
+    const owner = (cols[5]||"").trim();
 
     if(!(k&&n&&sym)) continue;
 
@@ -208,9 +223,12 @@ function makeChip(it, isTaken){
 }
 
 function renderBoard(categories){
-  const top = document.getElementById('grid-top');      top.innerHTML = "";
-  const def = document.getElementById('defense-footer');def.innerHTML = "";
+  const top = document.getElementById('grid-top'); top.innerHTML = "";
+  const defCard  = document.getElementById('def-card');
+  const defTitle = document.getElementById('def-title');
+  const defChips = document.getElementById('def-chips'); defChips.innerHTML = "";
 
+  // split defense from the rest
   let defense = null;
   const topCats = [];
   categories.forEach(c=>{
@@ -221,6 +239,7 @@ function renderBoard(categories){
     }
   });
 
+  // render left cats
   topCats.forEach(cat=>{
     const card = document.createElement('div'); card.className = "card";
     const h2 = document.createElement('h2'); h2.textContent = cat.name; card.appendChild(h2);
@@ -230,23 +249,21 @@ function renderBoard(categories){
     card.appendChild(chips); top.appendChild(card);
   });
 
+  // right-side defense
   if(defense){
-    const card = document.createElement('div'); card.className = "card defense-footer";
-    const h2 = document.createElement('h2'); h2.textContent = defense.name; card.appendChild(h2);
-    const chips = document.createElement('div'); chips.className = "chips";
-    defense.open.forEach(it => chips.appendChild(makeChip(it,false)));
-    defense.taken.forEach(it => chips.appendChild(makeChip(it,true)));
-    card.appendChild(chips); def.appendChild(card);
+    defTitle.textContent = defense.name || "Defense (Defensive)";
+    defense.open.forEach(it => defChips.appendChild(makeChip(it,false)));
+    defense.taken.forEach(it => defChips.appendChild(makeChip(it,true)));
+    defCard.style.display = "block";
+  }else{
+    defCard.style.display = "none";
   }
 }
 
 function renderOwners(ownerMap){
   const container = document.getElementById('owners'); container.innerHTML = "";
   const owners = Object.keys(ownerMap).sort();
-  if(owners.length===0){
-    container.innerHTML = `<div style="color:var(--muted);font-size:13px">No picks yet.</div>`;
-    return;
-  }
+  if(owners.length===0){ container.innerHTML = `<div style="color:var(--muted);font-size:13px">No picks yet.</div>`; return; }
   owners.forEach(name=>{
     const oc = document.createElement('div'); oc.className="ownerCard";
     const h3 = document.createElement('h3'); h3.textContent = name; oc.appendChild(h3);
@@ -260,20 +277,19 @@ function renderOwners(ownerMap){
   });
 }
 
-/* ---------- Sync + timestamp ---------- */
-async function syncOnce(){
-  if(!CSV_URL) return;
-  const res = await fetch(CSV_URL + ((CSV_URL.includes("?")?"&":"?")+"cachebust="+Date.now()));
-  const text = await res.text();
-  const {categories, ownerMap} = parseCSV(text);
-  renderBoard(categories);
-  renderOwners(ownerMap);
-  const ts = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
-  tsEl.textContent = `Last updated: ${ts}`;
+/* ---------- Poll loop ---------- */
+async function sync(){
+  try{
+    const res = await fetch(CSV_URL+((CSV_URL.includes("?")?"&":"?")+"cachebust="+Date.now()));
+    const t   = await res.text();
+    const {categories, ownerMap} = parseCSV(t);
+    renderBoard(categories);
+    renderOwners(ownerMap);
+  }catch(e){
+    // silent
+  }
 }
-
-syncOnce();
-setInterval(syncOnce, POLL_MS);
+sync(); setInterval(sync, POLL_MS);
 </script>
 </body>
 </html>
