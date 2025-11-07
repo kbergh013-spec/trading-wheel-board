@@ -5,30 +5,19 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Trading Wheels Fantasy Stock Ball — Live Draft Board</title>
 <style>
-  :root {
-    --bg:#76787a;
-    --panel:rgba(28,32,38,0.01); /* more transparent! */
-    --chip:rgba(35,39,51,0.85);
-    --chip-border:#2f333d;
-    --text:#cfd4e0;
-    --muted:#9ba0ad;
-    --accent:#47e8c0;
-  }
-  html, body {
-    height: 100%;
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    font-family: Inter, system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-  }
+  :root{
+    --bg: rgba(10,12,16,0.55);
+    --panel: rgba(24,28,36,0.92);
+    --text: #eaf0ff;
+    --muted: #9fb0d0;
+    --accent: #50e3c2;
+    --taken:#ff6b6b;
+    --chip:#1e2533;
+    --chip-border:#2b3447;
+    --owner:#86b5ff;
 
-  body {
-    background-image: url("Fantasy_Background.png");
-    background-repeat: no-repeat;
-    background-position: center center;
-    background-size: cover;
-    background-attachment: fixed;
-    background-blend-mode: normal;
+    /* default background (same “feel” as your QB page) */
+    --wm-opacity: .12; /* you can override via &wm= in the URL */
   }
 
   .wrap{
