@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Trading Wheels — Fantasy Stock Ball Live Draft Board</title>
+<title>Trading Wheels — Stage (Bubbles)</title>
 <style>
   :root {
     --bg:#76787a;
-    --panel:#1c2026;
-    --chip:#232733;
+    --panel:rgba(28,32,38,0.75); /* more transparent! */
+    --chip:rgba(35,39,51,0.85);
     --chip-border:#2f333d;
     --text:#cfd4e0;
     --muted:#9ba0ad;
@@ -34,15 +34,16 @@
   header {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     padding: 10px 20px;
   }
   header img {
-    height: 36px;
+    height: 40px;
   }
   header h1 {
     font-size: 20px;
     margin: 0;
+    font-weight: 700;
   }
 
   .wrap {
@@ -56,7 +57,7 @@
   .panel {
     background: var(--panel);
     border-radius: 14px;
-    padding: 14px 18px;
+    padding: 20px 18px;
     max-width: 1800px;
     margin: 0 auto;
     box-shadow: 0 8px 24px rgba(0,0,0,.2);
@@ -66,7 +67,7 @@
   .title {
     color: var(--accent);
     font-weight: 900;
-    font-size: 22px;
+    font-size: 26px;
     margin: 0 0 10px 0;
     text-align: center;
   }
@@ -75,7 +76,7 @@
     display: grid;
     grid-template-columns: repeat(var(--cols, 4), 1fr);
     grid-template-rows: repeat(var(--rows, 2), 1fr);
-    gap: var(--gap, 40px);
+    gap: var(--gap, 60px);
     justify-items: center;
     align-items: center;
     min-height: 70vh;
@@ -86,8 +87,8 @@
     background: var(--chip);
     border: 1px solid var(--chip-border);
     border-radius: 999px;
-    padding: 28px 36px;
-    min-width: 180px;
+    padding: 40px 60px;
+    min-width: 240px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -99,22 +100,20 @@
 
   .sym {
     font-weight: 900;
-    letter-spacing: .6px;
+    letter-spacing: 1px;
     line-height: 1;
   }
 
-  .size-s { font-size: 32px; }
-  .size-m { font-size: 42px; }
-  .size-l { font-size: 56px; }
   .size-xl { font-size: 72px; }
-
+  .size-l { font-size: 56px; }
 </style>
 </head>
 <body>
   <div class="wrap">
     <header>
+      <!-- Two logos side by side -->
       <img src="Trading Wheels.png" alt="Trading Wheels Logo" />
-      <img src="stock_logo.png" alt="Stock logo">
+      <img src="stock_logo.png" alt="Stock X Logo" />
       <h1>Trading Wheels Fantasy Stock Ball — Live Draft Board</h1>
     </header>
 
@@ -131,7 +130,7 @@
   const rows = parseInt(qs.get("rows") || "2", 10);
   const cols = parseInt(qs.get("cols") || "4", 10);
   const size = (qs.get("size") || "xl").toLowerCase();
-  const gap = qs.get("gap") || "40";
+  const gap = qs.get("gap") || "60";
   const title = qs.get("title") || "QB (MAG7 + NFLX)";
 
   document.getElementById("title").textContent = title;
@@ -150,7 +149,6 @@
     const text = await res.text();
     const lines = text.replace(/\r\n/g, "\n").split("\n").filter(Boolean);
 
-    // Find header row (skip "title" row if exists)
     let start = 0, header = lines[0].split(",");
     if (/^"?title"?$/i.test(header[0]?.trim())) {
       start = 2;
@@ -158,9 +156,8 @@
     }
     const h = header.map(x => x.trim().toLowerCase());
 
-    // Try to locate the ticker column (Symbol, Ticker, or C)
     let symIdx = h.findIndex(x => ["symbol","ticker","stock","c"].includes(x));
-    if (symIdx < 0) symIdx = 2; // fallback
+    if (symIdx < 0) symIdx = 2;
 
     const items = [];
     for (let i = start + 1; i < lines.length; i++) {
@@ -171,7 +168,7 @@
       items.push(sym);
     }
 
-    const sizeClass = ["s","m","l","xl"].includes(size) ? `size-${size}` : "size-xl";
+    const sizeClass = size === "l" ? "size-l" : "size-xl";
     grid.innerHTML = "";
     items.slice(0, rows * cols).forEach(sym => {
       const div = document.createElement("div");
@@ -203,7 +200,6 @@
   function escapeHTML(s){
     return s.replace(/[&<>"]/g,c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
   }
-
 })();
 </script>
 </body>
