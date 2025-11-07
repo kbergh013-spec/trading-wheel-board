@@ -165,15 +165,18 @@
     </div>
 
     <div class="layout">
+      <!-- Left column: all stocks -->
       <div>
         <div class="grid" id="grid-top"></div>
-        <div id="defense-footer"></div>
       </div>
+
+      <!-- Right column: picks + defense -->
       <div>
         <div class="card">
           <h2>Picks by Owner</h2>
           <div class="owners" id="owners"></div>
         </div>
+        <div id="defense-footer" class="card" style="margin-top:12px;"></div>
       </div>
     </div>
   </div>
@@ -271,12 +274,11 @@ function renderBoard(cats){
     card.appendChild(chips);top.appendChild(card);
   });
   if(defense){
-    const card=document.createElement("div");card.className="card";
-    const h2=document.createElement("h2");h2.textContent=defense.name;card.appendChild(h2);
+    const h2=document.createElement("h2");h2.textContent=defense.name;def.appendChild(h2);
     const chips=document.createElement("div");chips.className="chips";
     defense.open.forEach(it=>chips.appendChild(makeChip(it,false)));
     defense.taken.forEach(it=>chips.appendChild(makeChip(it,true)));
-    card.appendChild(chips);def.appendChild(card);
+    def.appendChild(chips);
   }
 }
 
