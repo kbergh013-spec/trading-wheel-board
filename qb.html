@@ -7,7 +7,7 @@
 const SHEET_ID = "10eCZI1tLui-KwHQDRFRnsZXghM_jf5MX8zdlCZkI-Os";
 
 // this pulls ONLY rows where column A (category_key) = 'qb'
-const csv = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tq=select%20A,B,C,D,E,F,G,H%20where%20A%3D'qb'&tqx=out:csv`;
+const csv = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tq=select%20A,B,C,E,F%20where%20A%3D'qb'&tqx=out:csv`;
 
 const url = "index.html?csv=" + encodeURIComponent(csv)
   + "&twlogo=" + encodeURIComponent("Trading Wheels.png")
