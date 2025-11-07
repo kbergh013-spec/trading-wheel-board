@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Trading Wheels Fantasy Stock Ball — Live Draft Board</title>
+<style>
+  :root{
+    --bg: rgba(10,12,16,0.55);
+    --panel: rgba(24,28,36,0.92);
+    --text: #eaf0ff;
+    --muted: #9fb0d0;
+    --accent: #50e3c2;
+    --taken:#ff6b6b;
+    --chip:#1e2533;
+    --chip-border:#2b3447;
+    --owner:#86b5ff;
+  }
+
+  html,body{
+    margin:0; padding:0; background:transparent;
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Helvetica,Arial;
+    color:var(--text);
+  }
+
+  /* container */
+  .wrap{
+    position:relative;
+    padding:16px;
+    background:var(--bg);
+    border-radius:16px;
+    backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+  }
+
+  /* Header with two logos */
+  header{position:relative; display:flex; align-items:center; gap:12px; margin-bottom:10px; z-index:2;}
+  .logos{display:flex; align-items:center; gap:8px}
+  img.logo{height:34px; width:auto; object-fit:contain; display:none}
+  img.logo.stock{height:26px; opacity:.9}
+  header h1{font-size:22px;margin:0;letter-spacing:.4px; font-weight:800}
+
+  .legend{position:relative; display:flex; gap:12px; align-items:center; margin:6px 0 12px; color:var(--muted); font-size:13px; z-index:2}
+  .dot{width:10px;height:10px;border-radius:50%}
+  .dot-open{background:var(--accent)} .dot-taken{background:var(--taken)}
+
+  /* Two columns: left = board, right = owners + defense */
+  .layout{
+    position:relative;
+    display:grid;
+    grid-template-columns: 2.5fr 1fr;
+    gap:12px;
+    align-items:start;
+    z-index:2;
+  }
+
+  /* Left: categories grid */
+  .grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:12px}
+
+  /* Cards & chips */
+  .card{background:var(--panel); border:1px solid #2a3346; border-radius:14px; padding:12px; min-height:80px}
+  .card h2{margin:0 0 10px; font-size:16px; font-weight:800; letter-spacing:.4px; color:var(--accent)}
+  .chips{display:flex; flex-wrap:wrap; gap:8px}
+  .chip{display:inline-flex; align-items:center; gap:8px; padding:8px 10px; background:var(--chip);
+        border:1px solid var(--chip-border); border-radius:999px; user-select:none; transition:all .2s; font-weight:700}
+  .chip small{color:var(--muted); font-weight:600}
+  .chip.taken{opacity:1; border-color:#3b1f24; background:#26171a; color:#ffdede}
+  .chip .owner{font-weight:700; color:var(--owner); margin-left:6px; opacity:.95}
+
+  /* Right column stack: Picks (auto) + Defense (fills & scrolls) */
+  .rightCol{display:flex; flex-direction:column; gap:12px; min-height:40vh}
+  .owners{display:flex; flex-direction:column; gap:12px}
+  .ownerCard h3{margin:0 0 10px; font-size:15px; color:#b8c8ff}
+  .ownerList{display:flex; flex-wrap:wrap; gap:8px}
+
+  .defCard{flex:1; min-height:220px; overflow:auto;} /* fills remaining height and scrolls internally */
+
+  /* Full-screen watermark that fits inside the viewport (no clipping) */
+  .sideMark{
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100vw;
+    height: auto;
+    max-width: 100vw;
+    max-height: 100vh;
+    object-fit: contain;
+    opacity: 0.05; /* tweak strength here */
+    filter: grayscale(10%) brightness(115%);
+    z-index: 0;  /* behind content */
+    pointer-events: none;
+    user-select: none;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logos">
+        <img id="twLogo" class="logo tw" alt="Trading Wheels"/>
+        <img id="stockLogo" class="logo stock" alt="Stock"/>
+      </div>
+      <h1>Trading Wheels Fantasy Stock Ball — Live Draft Board</h1>
+    </header>
+
+    <div class="legend">
+      <div class="dot dot-open"></div><span>Available</span>
+      <div class="dot dot-taken"></div><span>Taken</span>
+    </div>
+
+    <div class="layout">
+      <!-- LEFT: four main categories -->
+      <div>
+        <div class="grid" id="grid-top"></div>
+      </div>
+
+      <!-- RIGHT: picks by owner + DEFENSE -->
+      <div class="rightCol">
+        <div class="card">
+          <h2>Picks by Owner</h2>
+          <div class="owners" id="owners"></div>
+        </div>
+
+        <div class="card defCard" id="def-card" style="display:none">
+          <h2 id="def-title">Defense (Defensive)</h2>
+          <div class="chips" id="def-chips"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Watermark image -->
+  <img id="sideMark" class="sideMark" alt="Trading Wheels Watermark"/>
+
+<script>
+const params   = new URLSearchParams(location.search);
+const CSV_URL  = params.get("csv");
+const TW_LOGO  = params.get("twlogo")   || "file:///C:/Users/kberg/OneDrive/Pictures/Trading%20Wheels.png";
+const STOCKLOGO= params.get("stocklogo"); // optional
+const POLL_MS  = 5000;
+
+// Header logos & watermark
+const twLogoEl    = document.getElementById('twLogo');
+const stockLogoEl = document.getElementById('stockLogo');
+const sideMarkEl  = document.getElementById('sideMark');
+
+if (TW_LOGO){
+  twLogoEl.src = TW_LOGO;
+  twLogoEl.style.display='block';
+  sideMarkEl.src = TW_LOGO;
+  sideMarkEl.style.display='block';
+}
+if (STOCKLOGO){
+  stockLogoEl.src = STOCKLOGO;
+  stockLogoEl.style.display='block';
+}
+
+/* ---------- CSV helpers ---------- */
+function csvParseLine(line){
+  const out=[]; let cur=""; let inQuotes=false;
+  for(let i=0;i<line.length;i++){
+    const ch=line[i];
+    if(ch==='\"'){
+      if(inQuotes && line[i+1]==='\"'){ cur+='\"'; i++; }
+      else inQuotes = !inQuotes;
+    }else if(ch===',' && !inQuotes){
+      out.push(cur); cur="";
+    }else{
+      cur+=ch;
+    }
+  }
+  out.push(cur);
+  return out;
+}
+
+/* Robust parser: skips “Title” and header row */
+function parseCSV(text){
+  if(text.charCodeAt(0)===0xFEFF){ text=text.slice(1); }
+  const lines = text.replace(/\r\n/g,"\n").replace(/\r/g,"\n").split("\n").filter(l=>l.trim().length>0);
+  const rows  = lines.map(csvParseLine);
+
+  const cats = {};
+  const ownerMap = {};
+
+  for(let i=0;i<rows.length;i++){
+    const cols = rows[i];
+    if(!cols || cols.length===0) continue;
+
+    const c0 = (cols[0]||"").trim().toLowerCase();
+    if(c0 === "title" || c0 === "category_key") continue;
+
+    const k   = (cols[0]||"").trim();
+    const n   = (cols[1]||"").trim();
+    const sym = (cols[2]||"").trim();
+    const lab = (cols[3]||"").trim();
+    const taken = (cols[4]||"").toString().trim().toLowerCase();
+    const owner = (cols[5]||"").trim();
+
+    if(!(k&&n&&sym)) continue;
+
+    if(!cats[k]) cats[k] = {name:n, key:k, open:[], taken:[]};
+    const isTaken = (taken==="1"||taken==="true"||taken==="yes"||taken==="y");
+    const item = {symbol:sym, label:lab, owner};
+    (isTaken ? cats[k].taken : cats[k].open).push(item);
+
+    if(isTaken && owner){
+      if(!ownerMap[owner]) ownerMap[owner] = [];
+      ownerMap[owner].push({symbol:sym,label:lab,cat:n});
+    }
+  }
+
+  return {categories:Object.values(cats), ownerMap};
+}
+
+/* ---------- Rendering ---------- */
+function makeChip(it, isTaken){
+  const chip = document.createElement('div');
+  chip.className = "chip" + (isTaken ? " taken" : "");
+  const label = (it.label||"").trim();
+  const own   = (it.owner && isTaken) ? `<span class="owner">— ${it.owner}</span>` : "";
+  chip.innerHTML = `<strong>${(it.symbol||"").trim()}</strong> ${label?`<small>${label}</small>`:""} ${own}`;
+  return chip;
+}
+
+function renderBoard(categories){
+  const top = document.getElementById('grid-top'); top.innerHTML = "";
+  const defCard  = document.getElementById('def-card');
+  const defTitle = document.getElementById('def-title');
+  const defChips = document.getElementById('def-chips'); defChips.innerHTML = "";
+
+  // split defense from the rest
+  let defense = null;
+  const topCats = [];
+  categories.forEach(c=>{
+    if ((c.key||"").toLowerCase()==="def" || /defense/i.test(c.name||"")){
+      defense = c;
+    } else {
+      topCats.push(c);
+    }
+  });
+
+  // render left cats
+  topCats.forEach(cat=>{
+    const card = document.createElement('div'); card.className = "card";
+    const h2 = document.createElement('h2'); h2.textContent = cat.name; card.appendChild(h2);
+    const chips = document.createElement('div'); chips.className = "chips";
+    cat.open.forEach(it => chips.appendChild(makeChip(it,false)));
+    cat.taken.forEach(it => chips.appendChild(makeChip(it,true)));
+    card.appendChild(chips); top.appendChild(card);
+  });
+
+  // right-side defense
+  if(defense){
+    defTitle.textContent = defense.name || "Defense (Defensive)";
+    defense.open.forEach(it => defChips.appendChild(makeChip(it,false)));
+    defense.taken.forEach(it => defChips.appendChild(makeChip(it,true)));
+    defCard.style.display = "block";
+  }else{
+    defCard.style.display = "none";
+  }
+}
+
+function renderOwners(ownerMap){
+  const container = document.getElementById('owners'); container.innerHTML = "";
+  const owners = Object.keys(ownerMap).sort();
+  if(owners.length===0){ container.innerHTML = `<div style="color:var(--muted);font-size:13px">No picks yet.</div>`; return; }
+  owners.forEach(name=>{
+    const oc = document.createElement('div'); oc.className="ownerCard";
+    const h3 = document.createElement('h3'); h3.textContent = name; oc.appendChild(h3);
+    const list = document.createElement('div'); list.className="ownerList";
+    ownerMap[name].forEach(it=>{
+      const chip = document.createElement('div'); chip.className="chip taken";
+      chip.innerHTML = `<strong>${it.symbol}</strong> <small>${it.label}</small>`;
+      list.appendChild(chip);
+    });
+    oc.appendChild(list); container.appendChild(oc);
+  });
+}
+
+/* ---------- Poll loop ---------- */
+async function sync(){
+  try{
+    const res = await fetch(CSV_URL+((CSV_URL.includes("?")?"&":"?")+"cachebust="+Date.now()));
+    const t   = await res.text();
+    const {categories, ownerMap} = parseCSV(t);
+    renderBoard(categories);
+    renderOwners(ownerMap);
+  }catch(e){
+    // silent
+  }
+}
+sync(); setInterval(sync, POLL_MS);
+</script>
+</body>
+</html>
