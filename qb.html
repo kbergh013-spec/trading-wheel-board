@@ -1,0 +1,9 @@
+<!doctype html><html><head><meta charset="utf-8"><title>QB Stocks</title>
+<script>
+const q = new URLSearchParams({
+  csv: "https://docs.google.com/spreadsheets/d/10eCZI1tLui-KwHQDRFRnsZXghM_jf5MX8zdlCZkI-Os/gviz/tq?tqx=out:csv",
+  compact: "1",
+  view: "qb"
+});
+location.replace("index.html?" + q.toString());
+</script></head><body></body></html>
