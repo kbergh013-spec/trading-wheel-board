@@ -5,316 +5,282 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Trading Wheels Fantasy Stock Ball — Live Draft Board</title>
 <style>
-:root{
-  /* You can tweak --scale via URL (?scale=0.95). JS sets it at runtime. */
-  --scale: 0.96;
+  :root{
+    --bg: rgba(10,12,16,0.45);
+    --panel: rgba(24,28,36,0.92);
+    --text: #eaf0ff;
+    --muted: #9fb0d0;
+    --accent: #50e3c2;
+    --taken:#ff6b6b;
+    --chip:#1e2533;
+    --chip-border:#2b3447;
+    --owner:#86b5ff;
+  }
 
-  --bg: rgba(10,12,16,0.60);
-  --panel: rgba(24,28,36,0.94);
-  --text: #eaf0ff;
-  --muted: #9fb0d0;
-  --accent: #50e3c2;
-  --taken:#ff6b6b;
-  --chip:#1e2533;
-  --chip-border:#2b3447;
-  --owner:#86b5ff;
-}
+  html,body{
+    margin:0;
+    padding:0;
+    background:transparent;
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Helvetica,Arial;
+    color:var(--text);
+    overflow-x:hidden;
+  }
 
-html,body{
-  margin:0;
-  padding:0;
-  background:transparent;
-  font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Helvetica,Arial;
-  color:var(--text);
-  overflow:hidden; /* no scrollbars in OBS */
-}
+  /* WATERMARK BACKGROUND */
+  .watermark{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:0;
+  }
+  .watermark::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:
+      url("https://raw.githubusercontent.com/kbergh013-spec/trading-wheel-board/main/Trading%20Wheels.png")
+      no-repeat center center;
+    background-size:min(115vmin,100vh);
+    opacity:0.08;
+    filter:brightness(150%) contrast(105%);
+  }
 
-/* Scale the entire UI so it fits perfectly in 1080p */
-.wrap-outer{
-  transform: scale(var(--scale));
-  transform-origin: top left;
-  width: calc(100% / var(--scale));
-  height: calc(100% / var(--scale));
-}
+  /* MAIN WRAPPER */
+  .wrap{
+    position:relative;
+    padding:16px;
+    background:var(--bg);
+    border-radius:16px;
+    overflow:hidden;
+    backdrop-filter:blur(6px);
+    -webkit-backdrop-filter:blur(6px);
+    z-index:1;
+  }
 
-.wrap{
-  position:relative;
-  padding:12px;
-  background:var(--bg);
-  border-radius:16px;
-  overflow:hidden;
-  backdrop-filter:blur(6px);
-  -webkit-backdrop-filter:blur(6px);
-  z-index:1; /* above watermark */
-}
+  header{
+    position:relative;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-bottom:10px;
+    z-index:1;
+  }
 
-/* Full-screen watermark behind everything */
-.watermark{
-  position:fixed;
-  inset:0;
-  pointer-events:none;
-  z-index:0; /* behind content */
-}
-.watermark::after{
-  content:"";
-  position:absolute;
-  inset:0;
-  background:
-    url("https://raw.githubusercontent.com/kbergh013-spec/trading-wheel-board/main/Trading%20Wheels.png")
-    no-repeat right 2% bottom 2%;
-  background-size: min(95vmin, 95vh); /* scale within screen, keep aspect */
-  opacity:0.06;                      /* subtle */
-  filter:brightness(130%);
-}
+  .logos{display:flex;align-items:center;gap:8px;}
+  img.logo{height:34px;width:auto;object-fit:contain;}
+  img.logo.stock{height:26px;opacity:.9}
+  header h1{font-size:22px;margin:0;letter-spacing:.4px;font-weight:800;}
 
-/* Header with logos left/right */
-header{
-  display:grid;
-  grid-template-columns:auto 1fr auto;
-  align-items:center;
-  column-gap:10px;
-  margin-bottom:6px;
-}
-header .logo{
-  height:30px;
-  width:auto;
-  object-fit:contain;
-}
-header h1{
-  margin:0;
-  text-align:center;
-  font-size:22px;
-  font-weight:800;
-  letter-spacing:.3px;
-}
+  .legend{
+    position:relative;
+    display:flex;
+    gap:12px;
+    align-items:center;
+    margin:6px 0 12px;
+    color:var(--muted);
+    font-size:13px;
+    z-index:1;
+  }
+  .dot{width:10px;height:10px;border-radius:50%}
+  .dot-open{background:var(--accent)}
+  .dot-taken{background:var(--taken)}
 
-/* Legend */
-.legend{
-  display:flex;
-  gap:10px;
-  align-items:center;
-  margin:4px 0 10px;
-  color:var(--muted);
-  font-size:13px;
-}
-.dot{width:10px;height:10px;border-radius:50%}
-.dot-open{background:var(--accent)}
-.dot-taken{background:var(--taken)}
+  .layout{
+    position:relative;
+    display:grid;
+    grid-template-columns:3fr 1fr;
+    gap:12px;
+    align-items:start;
+    z-index:1;
+  }
 
-/* Layout: left board + right column */
-.layout{
-  display:grid;
-  grid-template-columns: 2.1fr 1fr;
-  gap:10px;
-  align-items:start;
-}
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+    gap:12px;
+  }
 
-/* Cards and chips — more compact so everything fits */
-.card{
-  background:var(--panel);
-  border:1px solid #2a3346;
-  border-radius:14px;
-  padding:10px;
-}
-.card h2{
-  margin:0 0 8px;
-  font-size:16px;
-  font-weight:800;
-  color:var(--accent);
-}
-.grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:10px}
+  .card{
+    background:var(--panel);
+    border:1px solid #2a3346;
+    border-radius:14px;
+    padding:12px;
+    min-height:60px;
+  }
+  .card h2{margin:0 0 10px;font-size:16px;font-weight:800;letter-spacing:.4px;color:var(--accent);}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;}
+  .chip{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:6px 8px;
+    background:var(--chip);
+    border:1px solid var(--chip-border);
+    border-radius:999px;
+    user-select:none;
+    transition:all .2s;
+    font-weight:700;
+  }
+  .chip small{color:var(--muted);font-weight:600}
+  .chip.taken{border-color:#3b1f24;background:#26171a;color:#ffdede}
+  .chip .owner{font-weight:700;color:var(--owner);margin-left:4px;opacity:.95}
 
-.chips{display:flex; flex-wrap:wrap; gap:6px}
-.chip{
-  display:inline-flex; align-items:center; gap:6px;
-  padding:6px 8px;
-  background:var(--chip);
-  border:1px solid var(--chip-border);
-  border-radius:999px;
-  font-weight:700;
-  font-size:13px;
-  line-height:1;
-}
-.chip small{color:var(--muted); font-weight:600; font-size:12px}
-.chip.taken{border-color:#3b1f24; background:#26171a; color:#ffdede}
-.chip .owner{font-weight:700; color:var(--owner); margin-left:4px}
+  .owners{display:flex;flex-direction:column;gap:12px;}
+  .ownerCard h3{margin:0 0 8px;font-size:15px;color:#b8c8ff;}
+  .ownerList{display:flex;flex-wrap:wrap;gap:6px;}
 
-/* Right column: Picks + Defense */
-.rightCol{display:flex; flex-direction:column; gap:10px}
-.owners{display:flex; flex-direction:column; gap:10px}
-.ownerCard h3{margin:0 0 8px; font-size:15px; color:#b8c8ff}
-.ownerList{display:flex; flex-wrap:wrap; gap:6px}
+  .rightCol{display:flex;flex-direction:column;gap:12px;}
+  .defense-card{background:var(--panel);border:1px solid #2a3346;border-radius:14px;padding:12px;}
 </style>
 </head>
 <body>
-  <!-- Watermark behind everything -->
   <div class="watermark"></div>
+  <div class="wrap">
+    <header>
+      <div class="logos">
+        <img src="https://raw.githubusercontent.com/kbergh013-spec/trading-wheel-board/main/Trading%20Wheels.png" class="logo tw" alt="Trading Wheels"/>
+        <img src="https://raw.githubusercontent.com/kbergh013-spec/trading-wheel-board/main/stock_logo.png" class="logo stock" alt="Stock"/>
+      </div>
+      <h1>Trading Wheels Fantasy Stock Ball — Live Draft Board</h1>
+    </header>
 
-  <!-- Scaled content wrapper -->
-  <div class="wrap-outer">
-    <div class="wrap">
-      <header>
-        <img class="logo" src="https://raw.githubusercontent.com/kbergh013-spec/trading-wheel-board/main/Trading%20Wheels.png" alt="Trading Wheels"/>
-        <h1>Trading Wheels Fantasy Stock Ball — Live Draft Board</h1>
-        <img class="logo" src="https://raw.githubusercontent.com/kbergh013-spec/trading-wheel-board/main/stock_logo.png" alt="Stock Logo"/>
-      </header>
+    <div class="legend">
+      <div class="dot dot-open"></div><span>Available</span>
+      <div class="dot dot-taken"></div><span>Taken</span>
+    </div>
 
-      <div class="legend">
-        <div class="dot dot-open"></div><span>Available</span>
-        <div class="dot dot-taken"></div><span>Taken</span>
+    <div class="layout">
+      <div>
+        <div class="grid" id="grid-top"></div>
       </div>
 
-      <div class="layout">
-        <!-- LEFT: main categories -->
-        <div>
-          <div class="grid" id="grid-top"></div>
+      <div class="rightCol">
+        <div class="card">
+          <h2>Picks by Owner</h2>
+          <div class="owners" id="owners"></div>
         </div>
-
-        <!-- RIGHT: Picks + Defense -->
-        <div class="rightCol">
-          <div class="card">
-            <h2>Picks by Owner</h2>
-            <div class="owners" id="owners"></div>
-          </div>
-
-          <div class="card" id="defense-footer"></div>
-        </div>
+        <div class="defense-card" id="defense-footer"></div>
       </div>
     </div>
   </div>
 
 <script>
-/* ---------- Params ---------- */
-const params = new URLSearchParams(location.search);
-const CSV_URL = params.get("csv");
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRDeqCYumZyn4Tn6snbe96U-4CgCyy6mNSnawQOT4uRpLdz36EIfSuZf_kA3xgFz-3tvR0H8IhD9byR/pub?gid=547264929&single=true&output=csv";
 const POLL_MS = 5000;
-const SCALE = parseFloat(params.get("scale") || "0.96");
-document.documentElement.style.setProperty('--scale', String(SCALE));
 
-/* ---------- CSV helpers ---------- */
 function csvParseLine(line){
-  const out=[]; let cur=""; let inQuotes=false;
+  const out=[];let cur="";let inQuotes=false;
   for(let i=0;i<line.length;i++){
     const ch=line[i];
-    if(ch==='\"'){ if(inQuotes && line[i+1]==='\"'){ cur+='\"'; i++; } else inQuotes=!inQuotes; }
-    else if(ch===',' && !inQuotes){ out.push(cur); cur=""; }
-    else cur+=ch;
+    if(ch==='\"'){
+      if(inQuotes && line[i+1]==='\"'){cur+='\"';i++;}
+      else inQuotes=!inQuotes;
+    }else if(ch===',' && !inQuotes){out.push(cur);cur="";}
+    else{cur+=ch;}
   }
-  out.push(cur);
-  return out;
+  out.push(cur);return out;
 }
 
 function parseCSV(text){
-  if(text.charCodeAt(0)===0xFEFF) text=text.slice(1);
-  const lines=text.replace(/\r\n/g,"\n").replace(/\r/g,"\n")
-                  .split("\n").filter(l=>l.trim().length>0);
+  if(text.charCodeAt(0)===0xFEFF){text=text.slice(1);}
+  const lines=text.replace(/\r\n/g,"\n").replace(/\r/g,"\n").split("\n").filter(l=>l.trim().length>0);
   const rows=lines.map(csvParseLine);
+  const cats={};const ownerMap={};
 
-  const cats={}; const ownerMap={};
-  // Skip header row
-  for(let i=1;i<rows.length;i++){
-    const c=rows[i];
-    const k=(c[0]||"").trim(), n=(c[1]||"").trim();
-    const sym=(c[2]||"").trim(), lab=(c[3]||"").trim();
-    const taken=(c[4]||"").trim().toLowerCase();
-    const owner=(c[5]||"").trim();
-    const price=(c[6]||"").trim(), pct=(c[7]||"").trim();
+  for(const cols of rows){
+    if(!cols||cols.length===0)continue;
+    const c0=(cols[0]||"").trim().toLowerCase();
+    if(c0==="title"||c0==="category_key")continue;
 
-    if(!(k&&n&&sym)) continue;
-    if(!cats[k]) cats[k]={name:n,key:k,open:[],taken:[]};
+    const k=(cols[0]||"").trim();
+    const n=(cols[1]||"").trim();
+    const sym=(cols[2]||"").trim();
+    const lab=(cols[3]||"").trim();
+    const taken=(cols[4]||"").toString().trim().toLowerCase();
+    const owner=(cols[5]||"").trim();
+    const price=(cols[6]||"").trim();
+    const change=(cols[7]||"").trim();
 
+    if(!(k&&n&&sym))continue;
+
+    if(!cats[k])cats[k]={name:n,key:k,open:[],taken:[]};
     const isTaken=(taken==="1"||taken==="true"||taken==="yes"||taken==="y");
-    const item={symbol:sym,label:lab,owner,price,change_pct:pct};
+    const item={symbol:sym,label:lab,owner,price,change};
     (isTaken?cats[k].taken:cats[k].open).push(item);
 
-    if(isTaken && owner){
-      if(!ownerMap[owner]) ownerMap[owner]=[];
-      ownerMap[owner].push({symbol:sym,label:lab,cat:n,price,change_pct:pct});
+    if(isTaken&&owner){
+      if(!ownerMap[owner])ownerMap[owner]=[];
+      ownerMap[owner].push({symbol:sym,label:lab,cat:n,price,change});
     }
   }
-  return {categories:Object.values(cats), ownerMap};
+  return{categories:Object.values(cats),ownerMap};
 }
 
-/* ---------- Rendering ---------- */
 function makeChip(it,isTaken){
-  const chip=document.createElement('div');
+  const chip=document.createElement("div");
   chip.className="chip"+(isTaken?" taken":"");
-  const label=(it.label||"").trim();
-  const price=(it.price||"").trim();
-  const pct=(it.change_pct||"").trim();
-  const own=(it.owner&&isTaken)?`<span class="owner">— ${it.owner}</span>`:"";
-  const pricePart = price ? `<small>$${Number(price).toFixed(2)}</small>` : "";
-  const pctNum = pct!=="" && !isNaN(Number(pct)) ? Number(pct) : null;
-  const pctPart  = pctNum!==null ? `<small style="color:${pctNum>=0?'#50e3c2':'#ff6b6b'}">${pctNum.toFixed(2)}%</small>` : "";
-  chip.innerHTML = `<strong>${(it.symbol||"").trim()}</strong> ${label?`<small>${label}</small>`:""} ${pricePart} ${pctPart} ${own}`;
+  const label=it.label?`<small>${it.label}</small>`:"";
+  const price=it.price?`$${it.price}`:"";
+  const chg=it.change?` <small style='color:${parseFloat(it.change)>=0?"#6df5a5":"#ff7a7a"}'>${it.change}%</small>`:"";
+  const own=(it.owner&&isTaken)?`<span class='owner'>— ${it.owner}</span>`:"";
+  chip.innerHTML=`<strong>${it.symbol}</strong> ${label} ${price}${chg} ${own}`;
   return chip;
 }
 
 function renderBoard(categories){
-  const top=document.getElementById('grid-top');
-  const def=document.getElementById('defense-footer');
-  top.innerHTML=""; def.innerHTML="";
-
-  let defense=null; const topCats=[];
+  const top=document.getElementById("grid-top");top.innerHTML="";
+  const def=document.getElementById("defense-footer");def.innerHTML="";
+  let defense=null;const topCats=[];
   categories.forEach(c=>{
-    if(/defense/i.test(c.name||"")) defense=c;
+    if((c.key||"").toLowerCase()==="def"||/defense/i.test(c.name||"")) defense=c;
     else topCats.push(c);
   });
 
   topCats.forEach(cat=>{
-    const card=document.createElement('div'); card.className="card";
-    const h2=document.createElement('h2'); h2.textContent=cat.name; card.appendChild(h2);
-    const chips=document.createElement('div'); chips.className="chips";
+    const card=document.createElement("div");card.className="card";
+    const h2=document.createElement("h2");h2.textContent=cat.name;card.appendChild(h2);
+    const chips=document.createElement("div");chips.className="chips";
     cat.open.forEach(it=>chips.appendChild(makeChip(it,false)));
     cat.taken.forEach(it=>chips.appendChild(makeChip(it,true)));
-    card.appendChild(chips); top.appendChild(card);
+    card.appendChild(chips);top.appendChild(card);
   });
 
   if(defense){
-    const h2=document.createElement('h2'); h2.textContent=defense.name; def.appendChild(h2);
-    const chips=document.createElement('div'); chips.className="chips";
+    const h2=document.createElement("h2");h2.textContent=defense.name;
+    const chips=document.createElement("div");chips.className="chips";
     defense.open.forEach(it=>chips.appendChild(makeChip(it,false)));
     defense.taken.forEach(it=>chips.appendChild(makeChip(it,true)));
-    def.appendChild(chips);
+    def.appendChild(h2);def.appendChild(chips);
   }
 }
 
 function renderOwners(ownerMap){
-  const container=document.getElementById('owners');
-  container.innerHTML="";
+  const container=document.getElementById("owners");container.innerHTML="";
   const owners=Object.keys(ownerMap).sort();
-  if(owners.length===0){
-    container.innerHTML=`<div style="color:var(--muted);font-size:13px">No picks yet.</div>`;
-    return;
-  }
+  if(owners.length===0){container.innerHTML=`<div style="color:var(--muted);font-size:13px">No picks yet.</div>`;return;}
   owners.forEach(name=>{
-    const oc=document.createElement('div'); oc.className="ownerCard";
-    const h3=document.createElement('h3'); h3.textContent=name; oc.appendChild(h3);
-    const list=document.createElement('div'); list.className="ownerList";
+    const oc=document.createElement("div");oc.className="ownerCard";
+    const h3=document.createElement("h3");h3.textContent=name;oc.appendChild(h3);
+    const list=document.createElement("div");list.className="ownerList";
     ownerMap[name].forEach(it=>{
-      const chip=document.createElement('div'); chip.className="chip taken";
-      const pctNum = it.change_pct!=="" && !isNaN(Number(it.change_pct)) ? Number(it.change_pct) : null;
-      const pctHTML = pctNum!==null ? `<small style="color:${pctNum>=0?'#50e3c2':'#ff6b6b'}">${pctNum.toFixed(2)}%</small>` : "";
-      const priceHTML = it.price ? `<small>$${Number(it.price).toFixed(2)}</small>` : "";
-      chip.innerHTML=`<strong>${it.symbol}</strong> <small>${it.label}</small> ${priceHTML} ${pctHTML}`;
+      const chip=document.createElement("div");chip.className="chip taken";
+      chip.innerHTML=`<strong>${it.symbol}</strong> <small>${it.label}</small> $${it.price} <small style='color:${parseFloat(it.change)>=0?"#6df5a5":"#ff7a7a"}'>${it.change}%</small>`;
       list.appendChild(chip);
     });
-    oc.appendChild(list); container.appendChild(oc);
+    oc.appendChild(list);container.appendChild(oc);
   });
 }
 
-/* ---------- Poll loop ---------- */
 async function sync(){
-  if(!CSV_URL) return;
   try{
     const res=await fetch(CSV_URL+((CSV_URL.includes("?")?"&":"?")+"cachebust="+Date.now()));
-    const text=await res.text();
-    const {categories,ownerMap}=parseCSV(text);
+    const t=await res.text();
+    const {categories,ownerMap}=parseCSV(t);
     renderBoard(categories);
     renderOwners(ownerMap);
-  }catch(e){ console.error(e); }
+  }catch(e){console.error("Error syncing:",e);}
 }
-sync(); setInterval(sync,POLL_MS);
+sync();setInterval(sync,POLL_MS);
 </script>
 </body>
 </html>
