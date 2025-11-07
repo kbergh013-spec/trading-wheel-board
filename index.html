@@ -35,18 +35,27 @@ html,body{
 
 /* Header */
 header{
-  position:relative;
   display:flex;
   align-items:center;
-  gap:12px;
+  justify-content:space-between;
   margin-bottom:10px;
-  z-index:1;
+}
+header .logos{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+header img{
+  height:34px;
+  width:auto;
+  object-fit:contain;
 }
 header h1{
   font-size:22px;
-  margin:0;
   font-weight:800;
   letter-spacing:.4px;
+  text-align:center;
+  flex:1;
 }
 .legend{
   display:flex;
@@ -60,10 +69,10 @@ header h1{
 .dot-open{background:var(--accent)}
 .dot-taken{background:var(--taken)}
 
-/* Layout: left board + right owners */
+/* Layout: left board + right column */
 .layout{
   display:grid;
-  grid-template-columns:2.5fr 1fr;
+  grid-template-columns:2fr 1fr;
   gap:12px;
   align-items:start;
 }
@@ -94,24 +103,41 @@ header h1{
   background:var(--chip);
   border:1px solid var(--chip-border);
   border-radius:999px;
-  user-select:none;
-  transition:all .2s;
   font-weight:700;
 }
 .chip small{color:var(--muted);font-weight:600}
 .chip.taken{border-color:#3b1f24;background:#26171a;color:#ffdede}
 .chip .owner{font-weight:700;color:var(--owner);margin-left:6px}
 
-/* Owners panel */
+/* Owners + Defense on right */
+.rightCol{display:flex;flex-direction:column;gap:12px}
 .owners{display:flex;flex-direction:column;gap:12px}
 .ownerCard h3{margin:0 0 10px;font-size:15px;color:#b8c8ff}
 .ownerList{display:flex;flex-wrap:wrap;gap:8px}
+
+/* Background watermark */
+.watermark{
+  position:fixed;
+  bottom:20px;
+  right:20px;
+  width:300px;
+  opacity:0.05;
+  pointer-events:none;
+  user-select:none;
+  filter:brightness(130%);
+}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
+    <div class="logos">
+      <img src="https://raw.githubusercontent.com/kbergh013-spec/trading-wheel-board/main/trading_wheels_logo.png" alt="Trading Wheels">
+    </div>
     <h1>Trading Wheels Fantasy Stock Ball — Live Draft Board</h1>
+    <div class="logos">
+      <img src="https://raw.githubusercontent.com/kbergh013-spec/trading-wheel-board/main/stock_logo.png" alt="Stock Logo">
+    </div>
   </header>
 
   <div class="legend">
@@ -120,18 +146,23 @@ header h1{
   </div>
 
   <div class="layout">
+    <!-- LEFT: main categories -->
     <div>
       <div class="grid" id="grid-top"></div>
-      <div id="defense-footer"></div>
     </div>
-    <div>
+
+    <!-- RIGHT: Picks and Defense -->
+    <div class="rightCol">
       <div class="card">
         <h2>Picks by Owner</h2>
         <div class="owners" id="owners"></div>
       </div>
+      <div class="card" id="defense-footer"></div>
     </div>
   </div>
 </div>
+
+<img src="https://raw.githubusercontent.com/kbergh013-spec/trading-wheel-board/main/trading_wheels_logo.png" class="watermark" alt="TW Watermark"/>
 
 <script>
 const params = new URLSearchParams(location.search);
@@ -142,14 +173,9 @@ function csvParseLine(line){
   const out=[]; let cur=""; let inQuotes=false;
   for(let i=0;i<line.length;i++){
     const ch=line[i];
-    if(ch==='\"'){
-      if(inQuotes && line[i+1]==='\"'){cur+='\"';i++;}
-      else inQuotes=!inQuotes;
-    }else if(ch===',' && !inQuotes){
-      out.push(cur); cur="";
-    }else{
-      cur+=ch;
-    }
+    if(ch==='\"'){if(inQuotes && line[i+1]==='\"'){cur+='\"';i++;}else inQuotes=!inQuotes;}
+    else if(ch===',' && !inQuotes){out.push(cur);cur="";}
+    else cur+=ch;
   }
   out.push(cur);
   return out;
@@ -215,12 +241,11 @@ function renderBoard(categories){
     card.appendChild(chips); top.appendChild(card);
   });
   if(defense){
-    const card=document.createElement('div'); card.className="card";
-    const h2=document.createElement('h2'); h2.textContent=defense.name; card.appendChild(h2);
+    const h2=document.createElement('h2'); h2.textContent=defense.name; def.appendChild(h2);
     const chips=document.createElement('div'); chips.className="chips";
     defense.open.forEach(it=>chips.appendChild(makeChip(it,false)));
     defense.taken.forEach(it=>chips.appendChild(makeChip(it,true)));
-    card.appendChild(chips); def.appendChild(card);
+    def.appendChild(chips);
   }
 }
 
@@ -250,9 +275,7 @@ async function sync(){
     const {categories,ownerMap}=parseCSV(text);
     renderBoard(categories);
     renderOwners(ownerMap);
-  }catch(e){
-    console.error(e);
-  }
+  }catch(e){console.error(e);}
 }
 sync(); setInterval(sync,POLL_MS);
 </script>
