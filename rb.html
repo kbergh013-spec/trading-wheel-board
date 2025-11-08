@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>RB Board</title>
+<script>
+const SHEET_ID = "10eCZI1tLui-KwHQDRFRnsZXghM_jf5MX8zdlCZkI-Os";
+
+// this pulls ONLY rows where column A (category_key) = 'rb'
+const csv = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tq=select%20A,B,C,E,F%20where%20A%3D'rb'&tqx=out:csv`;
+
+const url = "index.html?csv=" + encodeURIComponent(csv)
+  + "&twlogo=" + encodeURIComponent("Trading Wheels.png")
+  + "&stocklogo=" + encodeURIComponent("stock_logo.png");
+
+location.replace(url);
+</script>
+</head>
+<body></body>
+</html>
