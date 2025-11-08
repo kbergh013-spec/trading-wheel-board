@@ -76,8 +76,9 @@
   }
 
   .chips{
-    display:grid;
-    gap:14px;
+  display:grid;
+  gap: clamp(18px, 2vw, 36px);  /* dynamically scales spacing by screen width */
+  justify-items: center;
   }
 
   /* Base bubble style */
