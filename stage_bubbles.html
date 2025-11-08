@@ -2,210 +2,237 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Trading Wheels — Stage (Bubbles)</title>
+<title>Trading Wheels – Stage Bubbles</title>
 <style>
-  :root {
-    --bg:#76787a;
-    --panel:rgba(28,32,38,0.01); /* more transparent! */
-    --chip:rgba(35,39,51,0.85);
-    --chip-border:#2f333d;
-    --text:#cfd4e0;
-    --muted:#9ba0ad;
-    --accent:#47e8c0;
+  :root{
+    --panel: rgba(24,28,36,0.30);
+    --text:#eaf0ff;
+    --accent:#50e3c2;
+    --wm-opacity:.85;
   }
-  html, body {
-    height: 100%;
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    font-family: Inter, system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  html,body{
+    margin:0;
+    background:transparent;
+    color:var(--text);
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
   }
 
-  body {
-    background-image: url("Fantasy_Background.png");
-    background-repeat: no-repeat;
-    background-position: center center;
-    background-size: cover;
-    background-attachment: fixed;
-    background-blend-mode: normal;
+  /* Background image */
+  .wm{
+    position:fixed;
+    inset:0;
+    z-index:0;
+    pointer-events:none;
+  }
+  .wm img{
+    width:100vw;
+    height:100vh;
+    object-fit:cover;
+    opacity:var(--wm-opacity);
+    filter:none;
   }
 
-  header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 20px;
+  /* Header */
+  header{
+    position:relative;
+    z-index:1;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:12px 16px 4px;
   }
-  header img {
-    height: 40px;
-  }
-  header h1 {
-    font-size: 32px;
-    margin: 0;
-    font-weight: 800;
-  }
-
-  .wrap {
-    min-height: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding: 12px;
+  .logos{display:flex;align-items:center;gap:8px}
+  img.logo{height:34px;display:none}
+  img.logo.stock{height:26px;opacity:.9}
+  h1{
+    margin:0;
+    font-size:26px;
+    font-weight:800;
+    letter-spacing:.4px;
   }
 
-  .panel {
-    background: var(--panel);
-    border-radius: 14px;
-    padding: 20px 18px;
-    max-width: 1800px;
-    margin: 0 auto;
-    box-shadow: 0 8px 24px rgba(0,0,0,.2);
-    backdrop-filter: blur(1px); /* nice subtle blur effect */
+  /* Main card */
+  .wrap{
+    position:relative;
+    z-index:1;
+    padding:8px 16px 16px;
+  }
+  .card{
+    background:var(--panel);
+    border:1px solid #2a3346;
+    border-radius:16px;
+    padding:18px;
+    max-width:1800px;
+    margin:0 auto;
+  }
+  .card h2{
+    margin:0 0 14px;
+    font-size:20px;
+    color:var(--accent);
   }
 
-  .title {
-    color: var(--accent);
-    font-weight: 900;
-    font-size: 54px;
-    margin: 0 0 20px 0;
-    text-align: center;
-    letter-spacing: 0.5px;
-    text-shadow:
-      0 0 8px rgba(80, 227, 194, 0.8),
-      0 0 20px rgba(80, 227, 194, 0.5),
-      0 2px 4px rgba(0, 0, 0, 0.6);
+  .chips{
+    display:grid;
+    gap:14px;
   }
 
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(var(--cols, 4), 1fr);
-    grid-template-rows: repeat(var(--rows, 2), 1fr);
-    gap: var(--gap, 60px);
-    justify-items: center;
-    align-items: center;
-    min-height: 70vh;
-    padding: 20px;
+  /* Base bubble style */
+  .chip{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:999px;
+    border:1px solid #2b3447;
+    background:#1e2533;
+    font-weight:900;
+    letter-spacing:.45px;
+    color:var(--text);
+    padding:16px 10px;
+    font-size:36px;
+  }
+  .chip.taken{
+    background:#26171a;
+    border-color:#3b1f24;
+    color:#ffdede;
   }
 
-  .chip {
-    background: var(--chip);
-    border: 1px solid var(--chip-border);
-    border-radius: 999px;
-    padding: 40px 60px;
-    min-width: 240px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    color: var(--text);
-    box-shadow: 0 6px 18px rgba(0,0,0,.25);
-    user-select: none;
+  /* Size variants controlled by data-size on <html> */
+  html[data-size="xl"] .chip{
+    font-size:52px;
+    padding:24px 10px;
+  }
+  html[data-size="lg"] .chip{
+    font-size:42px;
+    padding:20px 10px;
+  }
+  html[data-size="md"] .chip{
+    font-size:32px;
+    padding:16px 10px;
+  }
+  html[data-size="sm"] .chip{
+    font-size:26px;
+    padding:14px 10px;
+  }
+  html[data-size="xs"] .chip{
+    font-size:20px;
+    padding:12px 8px;
   }
 
-  .sym {
-    font-weight: 900;
-    letter-spacing: 1px;
-    line-height: 1;
+  @media (max-width: 1400px){
+    .chip{font-size:90%}
   }
-
-  .size-xl { font-size: 72px; }
-  .size-l { font-size: 56px; }
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <!-- Two logos side by side -->
-      <img src="Trading Wheels.png" alt="Trading Wheels Logo" />
-      <img src="stock_logo.png" alt="Stock X Logo" />
-      <h1>Trading Wheels Fantasy Stock Ball — Live Draft Board</h1>
-    </header>
+  <!-- Background -->
+  <div class="wm"><img id="bg" alt="Background"></div>
 
-    <div class="panel">
-      <h2 id="title" class="title"></h2>
-      <div id="grid" class="grid"></div>
+  <header>
+    <div class="logos">
+      <img id="twLogo" class="logo" alt="Trading Wheels">
+      <img id="xLogo"  class="logo stock" alt="X logo">
+    </div>
+    <h1 id="pageTitle">Trading Wheels Board</h1>
+  </header>
+
+  <div class="wrap">
+    <div class="card">
+      <h2 id="cardTitle"></h2>
+      <div id="chips" class="chips"></div>
     </div>
   </div>
 
 <script>
-(async function(){
-  const qs = new URLSearchParams(location.search);
-  const csvURL = qs.get("csv");
-  const rows = parseInt(qs.get("rows") || "2", 10);
-  const cols = parseInt(qs.get("cols") || "4", 10);
-  const size = (qs.get("size") || "xl").toLowerCase();
-  const gap = qs.get("gap") || "60";
-  const title = qs.get("title") || "QB (MAG7 + NFLX)";
+const params   = new URLSearchParams(location.search);
 
-  document.getElementById("title").textContent = title;
-  const grid = document.getElementById("grid");
-  grid.style.setProperty("--rows", rows);
-  grid.style.setProperty("--cols", cols);
-  grid.style.setProperty("--gap", `${parseInt(gap, 10)}px`);
+/* URL params */
+const CSV_URL  = params.get("csv") || "";
+const ROWS     = parseInt(params.get("rows") || "3", 10); // not strictly needed, but kept for future use
+const COLS     = parseInt(params.get("cols") || "4", 10);
+const SIZE     = (params.get("size") || "lg").toLowerCase();
+const TITLE    = params.get("title") || "Trading Wheels Board";
 
-  if (!csvURL) {
-    grid.innerHTML = "<div style='color:#ffdddd'>Missing ?csv=…</div>";
-    return;
-  }
+const TW_LOGO  = params.get("twlogo")   || "Trading Wheels.png";
+const X_LOGO   = params.get("stocklogo")|| "stock_logo.png";
+const BG_IMAGE = params.get("bg")       || "Fantasy_Background.png";
 
-  try {
-    const res = await fetch(csvURL + (csvURL.includes("?") ? "&" : "?") + "cache=" + Date.now());
-    const text = await res.text();
-    const lines = text.replace(/\r\n/g, "\n").split("\n").filter(Boolean);
+/* Apply size to <html> for CSS */
+document.documentElement.setAttribute("data-size", SIZE);
 
-    let start = 0, header = lines[0].split(",");
-    if (/^"?title"?$/i.test(header[0]?.trim())) {
-      start = 2;
-      header = lines[1].split(",");
-    }
-    const h = header.map(x => x.trim().toLowerCase());
+/* Set titles and images */
+document.getElementById("pageTitle").textContent = TITLE;
+document.getElementById("cardTitle").textContent = TITLE;
 
-    let symIdx = h.findIndex(x => ["symbol","ticker","stock","c"].includes(x));
-    if (symIdx < 0) symIdx = 2;
+const twLogoEl = document.getElementById("twLogo");
+const xLogoEl  = document.getElementById("xLogo");
+const bgEl     = document.getElementById("bg");
 
-    const items = [];
-    for (let i = start + 1; i < lines.length; i++) {
-      const row = splitCSV(lines[i]);
-      if (!row.length) continue;
-      const sym = (row[symIdx] || "").trim();
-      if (!sym) continue;
-      items.push(sym);
-    }
+twLogoEl.src = TW_LOGO;  twLogoEl.style.display = "block";
+xLogoEl.src  = X_LOGO;   xLogoEl.style.display  = "block";
+bgEl.src     = BG_IMAGE;
 
-    const sizeClass = size === "l" ? "size-l" : "size-xl";
-    grid.innerHTML = "";
-    items.slice(0, rows * cols).forEach(sym => {
-      const div = document.createElement("div");
-      div.className = "chip";
-      div.innerHTML = `<div class="sym ${sizeClass}">${escapeHTML(sym)}</div>`;
-      grid.appendChild(div);
-    });
-
-  } catch (e) {
-    console.error(e);
-    grid.innerHTML = "<div style='color:#ffdddd'>Failed to load CSV.</div>";
-  }
-
-  function splitCSV(line){
-    const out = []; let cur = "", q = false;
-    for(let i=0;i<line.length;i++){
-      const ch=line[i];
+/* Simple CSV parser */
+function parseCSV(text){
+  text = text.replace(/^\uFEFF/, "");
+  const lines = text.split(/\r?\n/).filter(Boolean);
+  const rows  = [];
+  for(const line of lines){
+    let inQ = false, cur = "", cells = [];
+    for(let i=0; i<line.length; i++){
+      const ch = line[i];
       if(ch === '"'){
-        if(q && line[i+1] === '"'){ cur+='"'; i++; }
-        else q=!q;
-      } else if(ch === ',' && !q){
-        out.push(cur); cur="";
-      } else cur+=ch;
+        if(inQ && line[i+1] === '"'){ cur += '"'; i++; }
+        else inQ = !inQ;
+      }else if(ch === ',' && !inQ){
+        cells.push(cur); cur="";
+      }else{
+        cur += ch;
+      }
     }
-    out.push(cur);
-    return out;
+    cells.push(cur);
+    rows.push(cells);
   }
+  return rows;
+}
 
-  function escapeHTML(s){
-    return s.replace(/[&<>"]/g,c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+/* Render chips */
+function render(rows){
+  const box = document.getElementById("chips");
+  box.innerHTML = "";
+
+  // set column count from COLS param
+  box.style.gridTemplateColumns = `repeat(${COLS}, 1fr)`;
+
+  for(const r of rows){
+    const key = (r[0]||"").trim().toLowerCase();
+    if(key === "title" || key === "category_key") continue;
+
+    const sym   = (r[2]||"").trim();
+    if(!sym) continue;
+    const taken = (r[4]||"").toString().trim().toLowerCase();
+    const isTaken = (taken==="1"||taken==="true"||taken==="yes"||taken==="y");
+
+    const el = document.createElement("div");
+    el.className = "chip" + (isTaken ? " taken" : "");
+    el.textContent = sym;
+    box.appendChild(el);
   }
-})();
+}
+
+/* Polling loop */
+async function sync(){
+  if(!CSV_URL) return;
+  try{
+    const res = await fetch(CSV_URL + (CSV_URL.includes("?") ? "&" : "?") + "cachebust=" + Date.now());
+    const txt = await res.text();
+    const rows = parseCSV(txt);
+    render(rows);
+  }catch(e){
+    console.error(e);
+  }
+}
+sync();
+setInterval(sync, 5000);
 </script>
 </body>
 </html>
