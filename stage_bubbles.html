@@ -66,19 +66,14 @@
     margin:0 auto;
   }
   .card h2{
-  margin:0 0 24px;
-  font-size:48px;
-  font-weight:900;
-  color:var(--accent);
-  text-align:center;
-  text-shadow:0 0 10px rgba(80,227,194,0.8), 0 0 20px rgba(80,227,194,0.4);
-  letter-spacing:.5px;
+    margin:0 0 14px;
+    font-size:20px;
+    color:var(--accent);
   }
 
   .chips{
-  display:grid;
-  gap: clamp(18px, 2vw, 36px);  /* dynamically scales spacing by screen width */
-  justify-items: center;
+    display:grid;
+    gap:26px 40px;           /* bigger row + column gap for more spacing */
   }
 
   /* Base bubble style */
@@ -137,8 +132,7 @@
       <img id="twLogo" class="logo" alt="Trading Wheels">
       <img id="xLogo"  class="logo stock" alt="X logo">
     </div>
-    <!-- FIXED HEADER TEXT HERE -->
-    <h1 id="pageTitle">Trading Wheels Fantasy Stock Ball — Live Draft Board</h1>
+    <h1 id="pageTitle">Trading Wheels Board</h1>
   </header>
 
   <div class="wrap">
@@ -153,7 +147,6 @@ const params   = new URLSearchParams(location.search);
 
 /* URL params */
 const CSV_URL  = params.get("csv") || "";
-const ROWS     = parseInt(params.get("rows") || "3", 10); // kept for future use
 const COLS     = parseInt(params.get("cols") || "4", 10);
 const SIZE     = (params.get("size") || "lg").toLowerCase();
 const TITLE    = params.get("title") || "Trading Wheels Board";
@@ -166,7 +159,7 @@ const BG_IMAGE = params.get("bg")       || "Fantasy_Background.png";
 document.documentElement.setAttribute("data-size", SIZE);
 
 /* Set titles and images */
-/* IMPORTANT: keep header text fixed; only set the CARD title */
+document.getElementById("pageTitle").textContent = TITLE;
 document.getElementById("cardTitle").textContent = TITLE;
 
 const twLogoEl = document.getElementById("twLogo");
@@ -206,7 +199,7 @@ function render(rows){
   const box = document.getElementById("chips");
   box.innerHTML = "";
 
-  // set column count from COLS param
+  // column count from COLS param
   box.style.gridTemplateColumns = `repeat(${COLS}, 1fr)`;
 
   for(const r of rows){
