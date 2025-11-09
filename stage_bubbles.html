@@ -76,34 +76,8 @@
     text-shadow:0 0 18px rgba(80,227,194,0.9);
     letter-spacing:.5px;
   }
-/* ===== QB PAGE ONLY (when ?cat=qb) ===== */
 
-/* Make the QB layout full and clean (no frosted card box) */
-/*html[data-cat="qb"] .wrap {
-  padding: 40px 60px 80px;   /* move content nicely down from header */
-/*}
-
-html[data-cat="qb"] .card {
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  border-radius: 0;
-  max-width: 100%;           /* let the chips use the full width */
-/*}
-
-/* Center the QB title and give it breathing room */
-html[data-cat="qb"] #cardTitle {
-  margin: 0 0 70px;
-  text-align: center;
-}
-
-/* Space the chips like your “good” screenshot */
-html[data-cat="qb"] .chips {
-  gap: 12vh 7vw;              /* vertical gap, horizontal gap – tweak if needed */
-}
-
-  
-    .chips{
+  .chips{
     display:grid;
     gap:4vh 4vw; /* default row gap, column gap */
   }
@@ -131,60 +105,32 @@ html[data-cat="qb"] .chips {
   /* Size variants controlled by data-size on <html> */
   html[data-size="xl"] .chip{
     font-size:52px;
-    padding:24px 10px;
+    padding:24px 50px;
   }
   html[data-size="lg"] .chip{
     font-size:42px;
-    padding:20px 10px;
+    padding:20px 40px;
   }
   html[data-size="md"] .chip{
     font-size:32px;
-    padding:16px 10px;
+    padding:16px 32px;
   }
 
-  /* Extra spacing for big layouts */
+  /* Extra spacing based on size */
+  /* QB uses size=xl so this affects QB only */
   html[data-size="xl"] .chips{
-    gap:10vh 8vw;
+    gap:14vh 8vw;  /* vertical, horizontal – tweak 14 up/down for QB row spacing */
   }
-  html[data-size="xl"] .chip {
-    font-size: 48px;
-    padding: 26px 50px;
+  html[data-size="lg"] .chips{
+    gap:10vh 6vw;
   }
-
-  /* Make the QB layout full and clean (no frosted card box) */
-  html[data-cat="qb"] .wrap {
-    padding: 40px 60px 80px;   /* move content nicely down from header */
-  }
-
-  html[data-cat="qb"] .card {
-    background: transparent;
-    border: none;
-    box-shadow: none;
-    border-radius: 0;
-    max-width: 100%;           /* let the chips use the full width */
-  }
-
-  /* Center the QB title and give it breathing room */
-  html[data-cat="qb"] #cardTitle {
-    margin: 0 0 70px;
-    text-align: center;
-  }
-
-  /* DEFAULT QB spacing (will get overridden by the next, more specific rule) */
-  html[data-cat="qb"] .chips {
-    gap: 12vh 7vw;              /* vertical gap, horizontal gap – tweak if needed */
+  html[data-size="md"] .chips{
+    gap:8vh 5vw;
   }
 
   @media (max-width: 1400px){
     .chip{font-size:90%}
   }
-
-  /* FINAL: QB vertical spacing override, wins over everything above */
-  html[data-cat="qb"][data-size="xl"] .chips {
-    gap: 14vh 8vw;  /* vertical, horizontal – increase 14 -> 16 for more vertical space */
-  }
-
-
 </style>
 </head>
 <body>
@@ -216,7 +162,7 @@ const CATS = {
   qb: {
     key:   "qb",
     title: "QB (MAG7 + NFLX)",
-    size:  "xl",   // biggest chips
+    size:  "xl",   // biggest chips (QB only)
     cols:  4
   },
   rb: {
@@ -252,8 +198,8 @@ const catParam = (params.get("cat") || "qb").toLowerCase();
 const cfg = CATS[catParam] || CATS.qb;
 
 document.documentElement.setAttribute("data-size", cfg.size);
+// data-cat is set but not used right now – safe to keep for future tweaks
 document.documentElement.setAttribute("data-cat", cfg.key);
-
 
 const TW_LOGO  = "Trading Wheels.png";
 const X_LOGO   = "stock_logo.png";
