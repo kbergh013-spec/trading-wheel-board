@@ -32,7 +32,7 @@
     filter:none;
   }
 
-  /* Header */
+  /* Header (top bar) */
   header{
     position:relative;
     z-index:1;
@@ -65,19 +65,21 @@
     max-width:1800px;
     margin:0 auto;
   }
-  .card h2{
-  margin:0 0 24px;
-  font-size:48px;
-  font-weight:900;
-  color:var(--accent);
-  text-align:center;
-  text-shadow:0 0 10px rgba(80,227,194,0.8), 0 0 20px rgba(80,227,194,0.4);
-  letter-spacing:.5px;
+
+  /* Neon category title */
+  #cardTitle{
+    margin:0 0 20px;
+    font-size:32px;
+    font-weight:900;
+    text-align:center;
+    color:var(--accent);
+    text-shadow:0 0 18px rgba(80,227,194,0.9);
+    letter-spacing:.5px;
   }
 
   .chips{
     display:grid;
-    gap:26px 40px;           /* bigger row + column gap for more spacing */
+    gap:4vh 4vw; /* row, column gap */
   }
 
   /* Base bubble style */
@@ -117,9 +119,10 @@
     font-size:26px;
     padding:14px 10px;
   }
-  html[data-size="xs"] .chip{
-    font-size:20px;
-    padding:12px 8px;
+
+  /* Extra spacing for the big QB board */
+  html[data-size="xl"] .chips{
+    gap:7vh 6vw;
   }
 
   @media (max-width: 1400px){
@@ -136,7 +139,7 @@
       <img id="twLogo" class="logo" alt="Trading Wheels">
       <img id="xLogo"  class="logo stock" alt="X logo">
     </div>
-      <h1 id="pageTitle">Trading Wheels Fantasy Stock Ball — Live Draft Board</h1>
+    <h1>Trading Wheels Fantasy Stock Ball — Live Draft Board</h1>
   </header>
 
   <div class="wrap">
@@ -162,9 +165,10 @@ const BG_IMAGE = params.get("bg")       || "Fantasy_Background.png";
 /* Apply size to <html> for CSS */
 document.documentElement.setAttribute("data-size", SIZE);
 
-/* Set titles and images */
+/* Set category title */
 document.getElementById("cardTitle").textContent = TITLE;
 
+/* Logos & background */
 const twLogoEl = document.getElementById("twLogo");
 const xLogoEl  = document.getElementById("xLogo");
 const bgEl     = document.getElementById("bg");
@@ -202,7 +206,7 @@ function render(rows){
   const box = document.getElementById("chips");
   box.innerHTML = "";
 
-  // column count from COLS param
+  /* set column count from COLS param */
   box.style.gridTemplateColumns = `repeat(${COLS}, 1fr)`;
 
   for(const r of rows){
@@ -225,7 +229,9 @@ function render(rows){
 async function sync(){
   if(!CSV_URL) return;
   try{
-    const res = await fetch(CSV_URL + (CSV_URL.includes("?") ? "&" : "?") + "cachebust=" + Date.now());
+    const res = await fetch(
+      CSV_URL + (CSV_URL.includes("?") ? "&" : "?") + "cachebust=" + Date.now()
+    );
     const txt = await res.text();
     const rows = parseCSV(txt);
     render(rows);
