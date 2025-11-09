@@ -154,7 +154,12 @@ html[data-size="xl"] .chip {
 
   @media (max-width: 1400px){
     .chip{font-size:90%}
-  }
+
+    /* QB vertical spacing override */
+html[data-cat="qb"][data-size="xl"] .chips {
+  gap: 14vh 8vw;  /* vertical, horizontal */
+}
+
 </style>
 </head>
 <body>
