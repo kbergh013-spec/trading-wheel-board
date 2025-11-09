@@ -19,7 +19,7 @@
     font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
   }
 
-  /* Background image */
+  /* Background image – same style as other boards */
   .wm{
     position:fixed;
     inset:0;
@@ -34,7 +34,7 @@
     filter:none;
   }
 
-  /* Header */
+  /* Header bar – same as stage_bubbles */
   header{
     position:relative;
     z-index:1;
@@ -60,31 +60,54 @@
     padding:8px 16px 16px;
   }
 
+  /* Outer card (like category card on stage_bubbles) */
+  .board-card{
+    background:var(--panel);
+    border:1px solid #2a3346;
+    border-radius:16px;
+    padding:18px;
+    max-width:1800px;
+    margin:0 auto;
+  }
+
+  /* Neon page title */
+  #cardTitle{
+    margin:0 0 20px;
+    font-size:32px;
+    font-weight:900;
+    text-align:center;
+    color:var(--accent);
+    text-shadow:0 0 18px rgba(80,227,194,0.9);
+    letter-spacing:.5px;
+  }
+
   /* Grid of owner cards */
   .owners-grid{
     display:grid;
     gap:16px;
     grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));
-    max-width:1800px;
-    margin:0 auto;
   }
 
-  .card{
-    background:var(--panel);
+  .ownerCard{
+    background:rgba(10,14,22,0.55);
+    border-radius:14px;
     border:1px solid #2a3346;
-    border-radius:16px;
-    padding:16px 18px 18px;
+    padding:12px 14px 14px;
   }
-  .card h2{
+
+  .ownerCard h2{
     margin:0 0 10px;
     font-size:18px;
     color:var(--accent);
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
   }
-  .card h2 span{
-    font-size:13px;
+  .ownerCard h2 span{
+    font-size:12px;
     color:var(--muted);
-    margin-left:6px;
     font-weight:500;
+    margin-left:8px;
   }
 
   .chips{
@@ -93,7 +116,7 @@
     gap:10px;
   }
 
-  /* Bubble chip style (can tweak later) */
+  /* Bubble chips (smaller than category boards but same style) */
   .chip{
     display:inline-flex;
     align-items:center;
@@ -104,8 +127,8 @@
     font-weight:900;
     letter-spacing:.4px;
     color:var(--text);
-    padding:10px 16px;
-    font-size:22px;
+    padding:8px 14px;
+    font-size:18px;
     white-space:nowrap;
   }
   .chip small{
@@ -120,7 +143,7 @@
     color:var(--muted);
     font-size:14px;
     text-align:center;
-    margin-top:32px;
+    margin-top:24px;
   }
 </style>
 </head>
@@ -128,18 +151,25 @@
   <!-- Background -->
   <div class="wm"><img id="bg" alt="Background"></div>
 
+  <!-- Same header bar as other boards -->
   <header>
     <div class="logos">
       <img id="twLogo" class="logo" alt="Trading Wheels">
       <img id="xLogo"  class="logo stock" alt="X logo">
     </div>
-    <h1>Trading Wheels Fantasy Stock Ball — Picks Board</h1>
+    <h1>Trading Wheels Fantasy Stock Ball — Live Draft Board</h1>
   </header>
 
   <div class="wrap">
-    <div id="ownersGrid" class="owners-grid"></div>
-    <div id="emptyMsg" class="empty-msg" style="display:none;">
-      No picks yet. Once owners start drafting, their stocks will appear here.
+    <div class="board-card">
+      <!-- Neon “Picks Board” title -->
+      <h2 id="cardTitle">Picks Board</h2>
+
+      <!-- Owners grid -->
+      <div id="ownersGrid" class="owners-grid"></div>
+      <div id="emptyMsg" class="empty-msg" style="display:none;">
+        No picks yet. Once owners start drafting, their stocks will appear here.
+      </div>
     </div>
   </div>
 
@@ -147,17 +177,17 @@
 /* ====== Params & config ====== */
 const params   = new URLSearchParams(location.search);
 
-/* SHEET CONFIG – same sheet as your other pages */
+/* Same sheet as your other boards */
 const SHEET_ID = "10eCZI1tLui-KwHQDRFRnsZXghM_jf5MX8zdlCZkI-Os";
 
-/* Allow overriding CSV via ?csv=, but default is whole sheet A,B,C,E,F */
+/* Allow overriding CSV via ?csv=, but default is full * (all columns) */
 let CSV_URL    = params.get("csv") || "";
 if (!CSV_URL) {
-  const tq = encodeURIComponent("select A,B,C,E,F");
+  const tq = encodeURIComponent("select *"); // grab all columns, we'll map by header name
   CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tq=${tq}&tqx=out:csv`;
 }
 
-/* Assets/config from query (optional) */
+/* Logos & background (same pattern as other pages) */
 const TW_LOGO  = params.get("twlogo")   || "Trading Wheels.png";
 const X_LOGO   = params.get("stocklogo")|| "stock_logo.png";
 const BG_IMAGE = params.get("bg")       || "Fantasy_Background.png";
@@ -166,7 +196,6 @@ if (WM_OPAC && !Number.isNaN(parseFloat(WM_OPAC))) {
   document.documentElement.style.setProperty("--wm-opacity", parseFloat(WM_OPAC));
 }
 
-/* Hook up logos & background */
 document.getElementById("twLogo").src = TW_LOGO;
 document.getElementById("twLogo").style.display = "block";
 document.getElementById("xLogo").src  = X_LOGO;
@@ -197,21 +226,66 @@ function parseCSV(text){
   return rows;
 }
 
+/* ====== Helper: detect column indexes by header name ====== */
+function detectColumns(rows){
+  // defaults (if we can't find headers)
+  let idxKey   = 0;
+  let idxCat   = 1;
+  let idxSym   = 2;
+  let idxTaken = 4;
+  let idxOwner = 5;
+
+  if(!rows.length) return {idxKey,idxCat,idxSym,idxTaken,idxOwner};
+
+  // look for a header row where first cell is "category_key"
+  let header = null;
+  for(const r of rows){
+    if(!r.length) continue;
+    const c0 = (r[0]||"").trim().toLowerCase();
+    if(c0 === "category_key"){
+      header = r;
+      break;
+    }
+  }
+  if(!header) return {idxKey,idxCat,idxSym,idxTaken,idxOwner};
+
+  const lower = header.map(c => (c||"").trim().toLowerCase());
+
+  function findIndex(name, fallback){
+    const i = lower.indexOf(name);
+    return i >= 0 ? i : fallback;
+  }
+
+  idxKey   = findIndex("category_key", idxKey);
+  idxCat   = findIndex("category_name", idxCat);
+  idxSym   = findIndex("symbol",       idxSym);
+  idxTaken = findIndex("taken",        idxTaken);
+  idxOwner = findIndex("owner",        idxOwner);
+
+  return {idxKey,idxCat,idxSym,idxTaken,idxOwner, header};
+}
+
 /* ====== Build picks by owner ====== */
+/* Works even if columns are reordered, as long as headers exist */
 function buildPicks(rows){
   const owners = {}; // { ownerName: [{symbol, cat}] }
+
+  const {idxKey,idxCat,idxSym,idxTaken,idxOwner, header} = detectColumns(rows);
 
   for(const r of rows){
     if(!r || r.length < 3) continue;
 
-    const c0 = (r[0]||"").trim().toLowerCase();
+    // skip the header row itself if we identified it
+    if(header && r === header) continue;
+
+    const c0 = (r[idxKey]||"").trim().toLowerCase();
     if(c0 === "title" || c0 === "category_key") continue;
 
-    const catKey  = (r[0]||"").trim();
-    const catName = (r[1]||"").trim();
-    const sym     = (r[2]||"").trim();
-    const taken   = (r[4]||"").toString().trim().toLowerCase();
-    const owner   = (r[5]||"").trim();
+    const catKey  = (r[idxKey]  ||"").trim();
+    const catName = (r[idxCat]  ||"").trim();
+    const sym     = (r[idxSym]  ||"").trim();
+    const taken   = (r[idxTaken]||"").toString().trim().toLowerCase();
+    const owner   = (r[idxOwner]||"").trim();
 
     if(!sym || !owner) continue;
 
@@ -241,13 +315,14 @@ function renderOwners(owners){
   for(const name of names){
     const picks = owners[name];
     const card  = document.createElement("div");
-    card.className = "card";
+    card.className = "ownerCard";
 
     const h2 = document.createElement("h2");
+    const titleSpan = document.createElement("span");
+
     h2.textContent = name;
-    const span = document.createElement("span");
-    span.textContent = `${picks.length} pick${picks.length===1?"":"s"}`;
-    h2.appendChild(span);
+    titleSpan.textContent = `${picks.length} pick${picks.length===1?"":"s"}`;
+    h2.appendChild(titleSpan);
     card.appendChild(h2);
 
     const chips = document.createElement("div");
@@ -269,7 +344,9 @@ function renderOwners(owners){
 async function sync(){
   try{
     if(!CSV_URL) return;
-    const res  = await fetch(CSV_URL + (CSV_URL.includes("?")?"&":"?") + "cachebust=" + Date.now());
+    const res  = await fetch(
+      CSV_URL + (CSV_URL.includes("?")?"&":"?") + "cachebust=" + Date.now()
+    );
     const text = await res.text();
     const rows = parseCSV(text);
     const owners = buildPicks(rows);
