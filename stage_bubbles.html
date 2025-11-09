@@ -76,7 +76,33 @@
     text-shadow:0 0 18px rgba(80,227,194,0.9);
     letter-spacing:.5px;
   }
+/* ===== QB PAGE ONLY (when ?cat=qb) ===== */
 
+/* Make the QB layout full and clean (no frosted card box) */
+html[data-cat="qb"] .wrap {
+  padding: 40px 60px 80px;   /* move content nicely down from header */
+}
+
+html[data-cat="qb"] .card {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  max-width: 100%;           /* let the chips use the full width */
+}
+
+/* Center the QB title and give it breathing room */
+html[data-cat="qb"] #cardTitle {
+  margin: 0 0 70px;
+  text-align: center;
+}
+
+/* Space the chips like your “good” screenshot */
+html[data-cat="qb"] .chips {
+  gap: 9vh 7vw;              /* vertical gap, horizontal gap – tweak if needed */
+}
+
+  
   .chips{
     display:grid;
     gap:4vh 4vw; /* row gap, column gap */
