@@ -127,6 +127,25 @@
   html[data-size="md"] .chips{
     gap:8vh 5vw;
   }
+/* Center QB section vertically */
+html[data-cat="qb"] body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 100vh;  /* fill full screen height */
+}
+
+html[data-cat="qb"] .wrap {
+  flex-grow: 1; /* allows the card to center vertically */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0; /* remove top padding that pushes it down */
+}
+
+html[data-cat="qb"] .card {
+  margin: 0 auto;
+}
 
   @media (max-width: 1400px){
     .chip{font-size:90%}
