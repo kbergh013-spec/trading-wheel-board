@@ -196,6 +196,8 @@ const catParam = (params.get("cat") || "qb").toLowerCase();
 const cfg = CATS[catParam] || CATS.qb;
 
 document.documentElement.setAttribute("data-size", cfg.size);
+document.documentElement.setAttribute("data-cat", cfg.key);
+
 
 const TW_LOGO  = "Trading Wheels.png";
 const X_LOGO   = "stock_logo.png";
