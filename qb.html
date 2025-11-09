@@ -16,7 +16,10 @@ const url =
   + "&twlogo="   + encodeURIComponent("Trading Wheels.png")
   + "&stocklogo="+ encodeURIComponent("stock_logo.png");
 
-location.replace(url);
+const url = "index.html?csv=" + encodeURIComponent(csv)
+  + "&twlogo=" + encodeURIComponent("Trading Wheels.png")
+  + "&stocklogo=" + encodeURIComponent("stock_logo.png")
+  + "&layout=qb";  // tells the main file to use QB layout
 </script>
 </head>
 <body></body>
