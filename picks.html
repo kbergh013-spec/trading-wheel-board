@@ -127,10 +127,10 @@
   font-weight:900;
   letter-spacing:.4px;
   color:var(--text);
-  padding:14px 22px;   /* bigger bubble */
-  font-size:22px;      /* larger text */
+  padding:16px 26px;   /* increased padding for bigger pill shape */
+  font-size:24px;      /* larger text size */
   white-space:nowrap;
-  margin:6px;          /* adds breathing room between bubbles */
+  margin:10px;         /* more breathing room between bubbles */
 }
 
   }
@@ -334,7 +334,10 @@ function renderOwners(owners){
     picks.forEach(p => {
       const el = document.createElement("div");
       el.className = "chip";
-      el.innerHTML = `<span>${p.symbol}</span><small>${p.cat}</small>`;
+      el.innerHTML = `
+  <span style="margin-right:10px;">${p.symbol}</span>
+  <span style="font-size:0.8em; opacity:0.8;">${p.cat}</span>
+`;
       chips.appendChild(el);
     });
 
