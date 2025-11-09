@@ -79,7 +79,7 @@
 
   .chips{
     display:grid;
-    gap:4vh 4vw; /* row, column gap */
+    gap:4vh 4vw; /* row gap, column gap */
   }
 
   /* Base bubble style */
@@ -115,12 +115,8 @@
     font-size:32px;
     padding:16px 10px;
   }
-  html[data-size="sm"] .chip{
-    font-size:26px;
-    padding:14px 10px;
-  }
 
-  /* Extra spacing for the big QB board */
+  /* Extra spacing for big QB layout */
   html[data-size="xl"] .chips{
     gap:7vh 6vw;
   }
@@ -150,25 +146,65 @@
   </div>
 
 <script>
-const params   = new URLSearchParams(location.search);
+/* ---------- CONFIG ---------- */
 
-/* URL params */
-const CSV_URL  = params.get("csv") || "";
-const COLS     = parseInt(params.get("cols") || "4", 10);
-const SIZE     = (params.get("size") || "lg").toLowerCase();
-const TITLE    = params.get("title") || "Trading Wheels Board";
+const SHEET_ID = "10eCZI1tLui-KwHQDRFRnsZXghM_jf5MX8zdlCZkI-Os";
 
-const TW_LOGO  = params.get("twlogo")   || "Trading Wheels.png";
-const X_LOGO   = params.get("stocklogo")|| "stock_logo.png";
-const BG_IMAGE = params.get("bg")       || "Fantasy_Background.png";
+/* Per-category settings */
+const CATS = {
+  qb: {
+    key:   "qb",
+    title: "QB (MAG7 + NFLX)",
+    size:  "xl",   // biggest chips
+    cols:  4
+  },
+  rb: {
+    key:   "rb",
+    title: "RB (Dow 30)",
+    size:  "lg",
+    cols:  4
+  },
+  wr: {
+    key:   "wr",
+    title: "WR (Growth)",
+    size:  "lg",
+    cols:  4
+  },
+  te: {
+    key:   "te",
+    title: "TE (International)",
+    size:  "md",
+    cols:  4
+  },
+  def: {
+    key:   "def",
+    title: "Defense (Defensive)",
+    size:  "md",
+    cols:  4
+  }
+};
 
-/* Apply size to <html> for CSS */
-document.documentElement.setAttribute("data-size", SIZE);
+/* ---------- PARAMS ---------- */
 
-/* Set category title */
-document.getElementById("cardTitle").textContent = TITLE;
+const params = new URLSearchParams(location.search);
+const catParam = (params.get("cat") || "qb").toLowerCase();
+const cfg = CATS[catParam] || CATS.qb;
 
-/* Logos & background */
+document.documentElement.setAttribute("data-size", cfg.size);
+
+const TW_LOGO  = "Trading Wheels.png";
+const X_LOGO   = "stock_logo.png";
+const BG_IMAGE = "Fantasy_Background.png";
+
+/* Build the Google Sheets CSV URL for this category */
+const tq  = encodeURIComponent(`select A,B,C,E,F where A='${cfg.key}'`);
+const CSV_URL =
+  `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tq=${tq}&tqx=out:csv`;
+
+/* ---------- STATIC UI ---------- */
+
+document.getElementById("cardTitle").textContent = cfg.title;
+
 const twLogoEl = document.getElementById("twLogo");
 const xLogoEl  = document.getElementById("xLogo");
 const bgEl     = document.getElementById("bg");
@@ -177,7 +213,8 @@ twLogoEl.src = TW_LOGO;  twLogoEl.style.display = "block";
 xLogoEl.src  = X_LOGO;   xLogoEl.style.display  = "block";
 bgEl.src     = BG_IMAGE;
 
-/* Simple CSV parser */
+/* ---------- CSV PARSE ---------- */
+
 function parseCSV(text){
   text = text.replace(/^\uFEFF/, "");
   const lines = text.split(/\r?\n/).filter(Boolean);
@@ -201,13 +238,13 @@ function parseCSV(text){
   return rows;
 }
 
-/* Render chips */
+/* ---------- RENDER ---------- */
+
 function render(rows){
   const box = document.getElementById("chips");
   box.innerHTML = "";
 
-  /* set column count from COLS param */
-  box.style.gridTemplateColumns = `repeat(${COLS}, 1fr)`;
+  box.style.gridTemplateColumns = `repeat(${cfg.cols}, 1fr)`;
 
   for(const r of rows){
     const key = (r[0]||"").trim().toLowerCase();
@@ -225,9 +262,9 @@ function render(rows){
   }
 }
 
-/* Polling loop */
+/* ---------- POLLING ---------- */
+
 async function sync(){
-  if(!CSV_URL) return;
   try{
     const res = await fetch(
       CSV_URL + (CSV_URL.includes("?") ? "&" : "?") + "cachebust=" + Date.now()
