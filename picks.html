@@ -111,10 +111,12 @@
   }
 
   .chips{
-    display:flex;
-    flex-wrap:wrap;
-    gap:10px;
-  }
+  display:flex;
+  flex-direction:column;
+  align-items:center;     /* centers chips horizontally */
+  justify-content:center; /* centers chips vertically within each box */
+  gap:20px;               /* evenly spaced */
+}
 
   /* Bubble chips (smaller than category boards but same style) */
   .chip{
