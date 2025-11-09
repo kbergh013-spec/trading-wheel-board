@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Trading Wheels – Picks Board</title>
+<style>
+  :root{
+    --panel: rgba(24,28,36,0.30);
+    --text:#eaf0ff;
+    --muted:#9fb0d0;
+    --accent:#50e3c2;
+    --wm-opacity:.85;
+  }
+
+  html,body{
+    margin:0;
+    background:transparent;
+    color:var(--text);
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
+  }
+
+  /* Background image */
+  .wm{
+    position:fixed;
+    inset:0;
+    z-index:0;
+    pointer-events:none;
+  }
+  .wm img{
+    width:100vw;
+    height:100vh;
+    object-fit:cover;
+    opacity:var(--wm-opacity);
+    filter:none;
+  }
+
+  /* Header */
+  header{
+    position:relative;
+    z-index:1;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:12px 16px 4px;
+  }
+  .logos{display:flex;align-items:center;gap:8px}
+  img.logo{height:34px;display:none}
+  img.logo.stock{height:26px;opacity:.9}
+  h1{
+    margin:0;
+    font-size:26px;
+    font-weight:800;
+    letter-spacing:.4px;
+  }
+
+  /* Main wrapper */
+  .wrap{
+    position:relative;
+    z-index:1;
+    padding:8px 16px 16px;
+  }
+
+  /* Grid of owner cards */
+  .owners-grid{
+    display:grid;
+    gap:16px;
+    grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));
+    max-width:1800px;
+    margin:0 auto;
+  }
+
+  .card{
+    background:var(--panel);
+    border:1px solid #2a3346;
+    border-radius:16px;
+    padding:16px 18px 18px;
+  }
+  .card h2{
+    margin:0 0 10px;
+    font-size:18px;
+    color:var(--accent);
+  }
+  .card h2 span{
+    font-size:13px;
+    color:var(--muted);
+    margin-left:6px;
+    font-weight:500;
+  }
+
+  .chips{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+
+  /* Bubble chip style (can tweak later) */
+  .chip{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:999px;
+    border:1px solid #2b3447;
+    background:#1e2533;
+    font-weight:900;
+    letter-spacing:.4px;
+    color:var(--text);
+    padding:10px 16px;
+    font-size:22px;
+    white-space:nowrap;
+  }
+  .chip small{
+    font-size:11px;
+    font-weight:600;
+    color:var(--muted);
+    margin-left:6px;
+    text-transform:uppercase;
+  }
+
+  .empty-msg{
+    color:var(--muted);
+    font-size:14px;
+    text-align:center;
+    margin-top:32px;
+  }
+</style>
+</head>
+<body>
+  <!-- Background -->
+  <div class="wm"><img id="bg" alt="Background"></div>
+
+  <header>
+    <div class="logos">
+      <img id="twLogo" class="logo" alt="Trading Wheels">
+      <img id="xLogo"  class="logo stock" alt="X logo">
+    </div>
+    <h1>Trading Wheels Fantasy Stock Ball — Picks Board</h1>
+  </header>
+
+  <div class="wrap">
+    <div id="ownersGrid" class="owners-grid"></div>
+    <div id="emptyMsg" class="empty-msg" style="display:none;">
+      No picks yet. Once owners start drafting, their stocks will appear here.
+    </div>
+  </div>
+
+<script>
+/* ====== Params & config ====== */
+const params   = new URLSearchParams(location.search);
+
+/* SHEET CONFIG – same sheet as your other pages */
+const SHEET_ID = "10eCZI1tLui-KwHQDRFRnsZXghM_jf5MX8zdlCZkI-Os";
+
+/* Allow overriding CSV via ?csv=, but default is whole sheet A,B,C,E,F */
+let CSV_URL    = params.get("csv") || "";
+if (!CSV_URL) {
+  const tq = encodeURIComponent("select A,B,C,E,F");
+  CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tq=${tq}&tqx=out:csv`;
+}
+
+/* Assets/config from query (optional) */
+const TW_LOGO  = params.get("twlogo")   || "Trading Wheels.png";
+const X_LOGO   = params.get("stocklogo")|| "stock_logo.png";
+const BG_IMAGE = params.get("bg")       || "Fantasy_Background.png";
+const WM_OPAC  = params.get("wm");
+if (WM_OPAC && !Number.isNaN(parseFloat(WM_OPAC))) {
+  document.documentElement.style.setProperty("--wm-opacity", parseFloat(WM_OPAC));
+}
+
+/* Hook up logos & background */
+document.getElementById("twLogo").src = TW_LOGO;
+document.getElementById("twLogo").style.display = "block";
+document.getElementById("xLogo").src  = X_LOGO;
+document.getElementById("xLogo").style.display  = "block";
+document.getElementById("bg").src     = BG_IMAGE;
+
+/* ====== CSV parsing ====== */
+function parseCSV(text){
+  text = text.replace(/^\uFEFF/, "");
+  const lines = text.split(/\r?\n/).filter(Boolean);
+  const rows  = [];
+  for(const line of lines){
+    let inQ = false, cur = "", cells = [];
+    for(let i=0; i<line.length; i++){
+      const ch = line[i];
+      if(ch === '"'){
+        if(inQ && line[i+1]==='"'){ cur += '"'; i++; }
+        else inQ = !inQ;
+      }else if(ch === ',' && !inQ){
+        cells.push(cur); cur="";
+      }else{
+        cur += ch;
+      }
+    }
+    cells.push(cur);
+    rows.push(cells);
+  }
+  return rows;
+}
+
+/* ====== Build picks by owner ====== */
+function buildPicks(rows){
+  const owners = {}; // { ownerName: [{symbol, cat}] }
+
+  for(const r of rows){
+    if(!r || r.length < 3) continue;
+
+    const c0 = (r[0]||"").trim().toLowerCase();
+    if(c0 === "title" || c0 === "category_key") continue;
+
+    const catKey  = (r[0]||"").trim();
+    const catName = (r[1]||"").trim();
+    const sym     = (r[2]||"").trim();
+    const taken   = (r[4]||"").toString().trim().toLowerCase();
+    const owner   = (r[5]||"").trim();
+
+    if(!sym || !owner) continue;
+
+    const isTaken = (taken==="1" || taken==="true" || taken==="yes" || taken==="y");
+    if(!isTaken) continue;
+
+    if(!owners[owner]) owners[owner] = [];
+    owners[owner].push({symbol:sym, cat:catName || catKey});
+  }
+
+  return owners;
+}
+
+/* ====== Render ====== */
+function renderOwners(owners){
+  const grid  = document.getElementById("ownersGrid");
+  const empty = document.getElementById("emptyMsg");
+  grid.innerHTML = "";
+
+  const names = Object.keys(owners).sort((a,b)=>a.localeCompare(b));
+  if(!names.length){
+    empty.style.display = "block";
+    return;
+  }
+  empty.style.display = "none";
+
+  for(const name of names){
+    const picks = owners[name];
+    const card  = document.createElement("div");
+    card.className = "card";
+
+    const h2 = document.createElement("h2");
+    h2.textContent = name;
+    const span = document.createElement("span");
+    span.textContent = `${picks.length} pick${picks.length===1?"":"s"}`;
+    h2.appendChild(span);
+    card.appendChild(h2);
+
+    const chips = document.createElement("div");
+    chips.className = "chips";
+
+    picks.forEach(p => {
+      const el = document.createElement("div");
+      el.className = "chip";
+      el.innerHTML = `<span>${p.symbol}</span><small>${p.cat}</small>`;
+      chips.appendChild(el);
+    });
+
+    card.appendChild(chips);
+    grid.appendChild(card);
+  }
+}
+
+/* ====== Poll loop ====== */
+async function sync(){
+  try{
+    if(!CSV_URL) return;
+    const res  = await fetch(CSV_URL + (CSV_URL.includes("?")?"&":"?") + "cachebust=" + Date.now());
+    const text = await res.text();
+    const rows = parseCSV(text);
+    const owners = buildPicks(rows);
+    renderOwners(owners);
+  }catch(err){
+    console.error("Picks sync failed:", err);
+  }
+}
+
+sync();
+setInterval(sync, 5000);
+</script>
+</body>
+</html>
