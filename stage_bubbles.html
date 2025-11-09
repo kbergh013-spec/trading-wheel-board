@@ -103,9 +103,9 @@ html[data-cat="qb"] .chips {
 }
 
   
-  .chips{
+    .chips{
     display:grid;
-    gap:4vh 4vw; /* row gap, column gap */
+    gap:4vh 4vw; /* default row gap, column gap */
   }
 
   /* Base bubble style */
@@ -142,23 +142,48 @@ html[data-cat="qb"] .chips {
     padding:16px 10px;
   }
 
-  /* Extra spacing for big QB layout */
+  /* Extra spacing for big layouts */
   html[data-size="xl"] .chips{
     gap:10vh 8vw;
   }
-html[data-size="xl"] .chip {
-  font-size: 48px;
-  padding: 26px 50px;
-}
+  html[data-size="xl"] .chip {
+    font-size: 48px;
+    padding: 26px 50px;
+  }
 
+  /* Make the QB layout full and clean (no frosted card box) */
+  html[data-cat="qb"] .wrap {
+    padding: 40px 60px 80px;   /* move content nicely down from header */
+  }
+
+  html[data-cat="qb"] .card {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    max-width: 100%;           /* let the chips use the full width */
+  }
+
+  /* Center the QB title and give it breathing room */
+  html[data-cat="qb"] #cardTitle {
+    margin: 0 0 70px;
+    text-align: center;
+  }
+
+  /* DEFAULT QB spacing (will get overridden by the next, more specific rule) */
+  html[data-cat="qb"] .chips {
+    gap: 12vh 7vw;              /* vertical gap, horizontal gap – tweak if needed */
+  }
 
   @media (max-width: 1400px){
     .chip{font-size:90%}
+  }
 
-    /* QB vertical spacing override */
-html[data-cat="qb"][data-size="xl"] .chips {
-  gap: 14vh 8vw;  /* vertical, horizontal */
-}
+  /* FINAL: QB vertical spacing override, wins over everything above */
+  html[data-cat="qb"][data-size="xl"] .chips {
+    gap: 14vh 8vw;  /* vertical, horizontal – increase 14 -> 16 for more vertical space */
+  }
+
 
 </style>
 </head>
