@@ -5,7 +5,7 @@
 <title>Trading Wheels – Picks Board</title>
 <style>
   :root{
-    --panel: rgba(24,28,36,0.30);
+    --panel: rgba(24,28,36,0.10);  /* was 0.30 – lighter overall */
     --text:#eaf0ff;
     --muted:#9fb0d0;
     --accent:#50e3c2;
@@ -61,14 +61,15 @@
   }
 
   /* Outer card (like category card on stage_bubbles) */
-  .board-card{
-    background:var(--panel);
-    border:1px solid #2a3346;
-    border-radius:16px;
-    padding:18px;
-    max-width:1800px;
-    margin:0 auto;
-  }
+.board-card{
+  background: rgba(24,28,36,0.07);               /* very light glass */
+  border: 1px solid rgba(42, 51, 70, 0.3);       /* softer border */
+  border-radius:16px;
+  padding:18px;
+  max-width:1800px;
+  margin:0 auto;
+  transform: translate(-40px, -30px);            /* move left/up off logos */
+}
 
   /* Neon page title */
   #cardTitle{
