@@ -154,6 +154,24 @@ html[data-cat="qb"] .card {
   @media (max-width: 1400px){
     .chip{font-size:90%}
   }
+
+  /* RB page only — make chips a bit smaller and closer so they fit on screen */
+html[data-cat="rb"] .chip {
+  font-size: 30px;      /* was 36 / 42 / 52 depending on size */
+  padding: 12px 28px;   /* less vertical padding = shorter bubbles */
+}
+
+/* RB grid spacing — less vertical gap so more rows fit */
+html[data-cat="rb"] .chips {
+  gap: 5vh 5vw;         /* vertical, horizontal spacing */
+}
+
+/* Optional: shrink the RB card padding a bit to gain more height */
+html[data-cat="rb"] .card {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
 </style>
 </head>
 <body>
