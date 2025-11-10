@@ -154,6 +154,18 @@ html[data-cat="qb"] .card {
   @media (max-width: 1400px){
     .chip{font-size:90%}
   }
+
+  /* RB page only — make the chips smaller so they fit better */
+html[data-cat="rb"] .chip {
+  font-size: 34px;     /* smaller text */
+  padding: 14px 30px;  /* tighter padding */
+}
+
+/* Optional: adjust RB spacing */
+html[data-cat="rb"] .chips {
+  gap: 6vh 5vw;        /* vertical, horizontal spacing */
+}
+
 </style>
 </head>
 <body>
