@@ -166,6 +166,39 @@
     margin-top:24px;
   }
 
+  /* ===== FINAL CENTERING FOR PICKS BOARD ===== */
+
+/* Make each owner card a vertical flex box and center its content */
+.ownerCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;        /* center things horizontally in the card */
+}
+
+/* Center the name + picks text */
+.ownerCard h2 {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;        /* name + "4 picks" centered */
+  text-align: center;
+}
+
+/* Stack & center chips under the name */
+.ownerCard .chips {
+  display: flex;
+  flex-direction: column;
+  align-items: center;        /* center bubbles */
+  justify-content: center;
+  gap: 24px;
+  width: 100%;
+}
+
+/* Make each chip itself centered in that area */
+.ownerCard .chip {
+  margin: 0 auto !important;  /* force horizontal centering */
+}
+
 
 </style>
 </head>
