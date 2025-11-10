@@ -202,6 +202,21 @@ html[data-cat="wr"] .card {
   transform: translate(-60px, -50px);  /* try -30px first; adjust if needed */
 }
 
+/* ===== Make top-right chips smaller on RB, WR, TE, DEF ===== */
+
+/* Target only the top 2 chips in the 4th column */
+html[data-cat="rb"] .chip:nth-child(4),
+html[data-cat="rb"] .chip:nth-child(8),
+html[data-cat="wr"] .chip:nth-child(4),
+html[data-cat="wr"] .chip:nth-child(8),
+html[data-cat="te"] .chip:nth-child(4),
+html[data-cat="te"] .chip:nth-child(8),
+html[data-cat="def"] .chip:nth-child(4),
+html[data-cat="def"] .chip:nth-child(8) {
+  transform: scale(0.82);         /* makes them about 18% smaller */
+  opacity: 0.9;                   /* slightly more transparent */
+  background: rgba(30, 37, 51, 0.22) !important;
+}
 
 
 </style>
