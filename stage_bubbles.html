@@ -102,10 +102,6 @@
     color:#ffdede;
   }
 
-  /* Slight transparency for all chips */
-.chip {
-  background: rgba(30, 37, 51, 0.7); /* 0.7 = 70% solid, 30% see-through */
-
   /* Size variants controlled by data-size on <html> */
   html[data-size="xl"] .chip{
     font-size:52px;
@@ -158,23 +154,6 @@ html[data-cat="qb"] .card {
   @media (max-width: 1400px){
     .chip{font-size:90%}
   }
-
-  /* RB page only — make the chips smaller so they fit better */
-html[data-cat="rb"] .chip {
-  font-size: 34px;     /* smaller text */
-  padding: 14px 30px;  /* tighter padding */
-}
-
-/* Optional: adjust RB spacing */
-html[data-cat="rb"] .chips {
-  gap: 6vh 5vw;        /* vertical, horizontal spacing */
-}
-
-  /* Optional: make RB chips a bit more see-through than others */
-html[data-cat="rb"] .chip {
-  background: rgba(30, 37, 51, 0.5); /* 0.5 = 50% solid, 50% transparent */
-}
-
 </style>
 </head>
 <body>
