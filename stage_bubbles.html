@@ -189,6 +189,14 @@ html[data-cat="def"] .chip {
   background: rgba(30, 37, 51, 0.45);
 }
 
+  /* Slightly more transparent chips for crowded categories */
+html[data-cat="rb"] .chip,
+html[data-cat="wr"] .chip,
+html[data-cat="te"] .chip,
+html[data-cat="def"] .chip {
+  background: rgba(30, 37, 51, 0.38); /* was ~0.5; this lets background show more */
+}
+
 </style>
 </head>
 <body>
