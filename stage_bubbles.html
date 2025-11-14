@@ -173,6 +173,29 @@ html[data-cat="rb"] .card {
   padding-bottom: 10px;
 }
 
+  /* RB page only — already exists */
+html[data-cat="rb"] .chip { ... }
+html[data-cat="rb"] .chips { ... }
+html[data-cat="rb"] .card { ... }
+
+/* ------------------------------------------------------- */
+/* WR page only — ADD THIS BELOW RB BLOCK */
+/* ------------------------------------------------------- */
+html[data-cat="wr"] .chip {
+  font-size: 32px;
+  padding: 16px 28px;
+}
+
+html[data-cat="wr"] .chips {
+  gap: 6vh 4vw;
+}
+
+html[data-cat="wr"] .card {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+
   /* Make chips semi-transparent on every page */
 .chip {
   background: rgba(30, 37, 51, 0.55);  /* 0.55 = 55 % solid, 45 % see-through */
