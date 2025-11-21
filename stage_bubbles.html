@@ -103,6 +103,30 @@
     color:#ffdede;
   }
 
+  /* Let chip content stack vertically when it has owner text */
+.chip {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+}
+
+/* Main symbol text inside taken chips */
+.chip-main {
+  line-height: 1.1;
+}
+
+/* Owner name under the symbol when taken */
+.chip-owner {
+  margin-top: 4px;
+  font-size: 16px;          /* you can tweak smaller/bigger */
+  font-weight: 600;
+  color: #9fb0d0;           /* muted teal-ish */
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+
   /* Size variants controlled by data-size on <html> */
   html[data-size="xl"] .chip{
     font-size:52px;
