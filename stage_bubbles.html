@@ -373,20 +373,39 @@ function render(rows){
   box.style.gridTemplateColumns = `repeat(${cfg.cols}, 1fr)`;
 
   for(const r of rows){
-    const key = (r[0]||"").trim().toLowerCase();
+    const key = (r[0] || "").trim().toLowerCase();
     if(key === "title" || key === "category_key") continue;
 
-    const sym   = (r[2]||"").trim();
+    const sym = (r[2] || "").trim();     // symbol
     if(!sym) continue;
-    const taken = (r[4]||"").toString().trim().toLowerCase();
-    const isTaken = (taken==="1"||taken==="true"||taken==="yes"||taken==="y");
+
+    const takenRaw = (r[3] || "").toString().trim().toLowerCase();  // column E
+    const owner    = (r[4] || "").trim();                           // column F
+
+    const isTaken =
+      takenRaw === "1" ||
+      takenRaw === "true" ||
+      takenRaw === "yes" ||
+      takenRaw === "y";
 
     const el = document.createElement("div");
     el.className = "chip" + (isTaken ? " taken" : "");
-    el.textContent = sym;
+
+    // If taken and we have an owner, show symbol + owner on two lines
+    if(isTaken && owner){
+      el.innerHTML = `
+        <div class="chip-main">${sym}</div>
+        <div class="chip-owner">${owner}</div>
+      `;
+    }else{
+      // otherwise just show the symbol like before
+      el.textContent = sym;
+    }
+
     box.appendChild(el);
   }
 }
+
 
 /* ---------- POLLING ---------- */
 
